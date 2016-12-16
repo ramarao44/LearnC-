@@ -5,3 +5,5 @@ Cpp important points come across in learning
   an l value that means a memory to assign the the value. for example int arr[2]=5; writing into an array at index 2 so we
   need the address. It won't work if it is like this, if subscript operator returns value  for example arr[2]'s value is 3
   the assignment would be like this arr[2]=5; //2=5 error l value required by compiler
+3.Rule: Make sure you’re not trying to call an overloaded operator[] on a pointer to an object.
+
