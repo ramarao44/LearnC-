@@ -1,0 +1,7 @@
+Cpp important points come across in learning
+=============================================
+1. Alaways use assert to check index passed as a parameter to function of an array before using the array.
+2. Subscript operator should return & reference to the value of an array why because the assignemnt operator requires
+  an l value that means a memory to assign the the value. for example int arr[2]=5; writing into an array at index 2 so we
+  need the address. It won't work if it is like this, if subscript operator returns value  for example arr[2]'s value is 3
+  the assignment would be like this arr[2]=5; //2=5 error l value required by compiler
