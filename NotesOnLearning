@@ -6,4 +6,12 @@ Cpp important points come across in learning
   need the address. It won't work if it is like this, if subscript operator returns value  for example arr[2]'s value is 3
   the assignment would be like this arr[2]=5; //2=5 error l value required by compiler
 3.Rule: Make sure you’re not trying to call an overloaded operator[] on a pointer to an object.
+4.Don’t set pointers to your objects if you don’t have to. IntList *list = new IntList;
+    (*list)[2] = 3; // get our IntList object, then call overloaded operator[]
+    delete list;
+    
+ 5.Overloading operator[] to take a std::string parameter can be useful when writing certain kinds of classes, such as those that use words as indices.
+Conclusion
+The subscript operator is typically overloaded to provide direct access to individual elements from an array (or other similar structure) contained within a class. Because strings are often implemented as arrays of characters, operator[] is often implemented in string classes to allow the user to access a single character of the string.
+
 
