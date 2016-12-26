@@ -245,3 +245,6 @@ P operator++(P&, int)
 A operator--(A&, int)
 P operator--(P&, int)
 ================================
+The keyword-like forms (and,or,not) and the symbol-like forms (&&,||,!) can be used interchangeably (See alternative representations)
+All built-in operators return bool, and most user-defined overloads also return bool so that the user-defined operators can be used in the same manner as the built-ins. However, in a user-defined operator overload, any type can be used as return type (including void).
+Builtin operators && and || perform short-circuit evaluation (do not evaluate the second operand if the result is known after evaluating the first), but overloaded operators behave like regular function calls and always evaluate both operands
