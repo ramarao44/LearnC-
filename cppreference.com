@@ -160,4 +160,33 @@ showlist(1, "x", int); // expands to puts("1, \"x\", int")
 A ## operator between any two successive identifiers in the replacement-list runs parameter replacement on the two identifiers (which are not macro-expanded first) and then concatenates the result. This operation is called "concatenation" or "token pasting". Only tokens that form a valid token together may be pasted: identifiers that form a longer identifier, digits that form a number, or operators + and = that form a +=. A comment cannot be created by pasting / and * because comments are removed from text before macro substitution is considered. If the result of concatenation is not a valid token, the behavior is undefined.
 
 Note: some compilers offer an extension that allows ## to appear after a comma and before __VA_ARGS__, in which case the ## does nothing when __VA_ARGS__ is non-empty, but removes the comma when __VA_ARGS__ is empty: this makes it possible to define macros such as fprintf (stderr, format, ##__VA_ARGS__)
+==================================
+#include <iostream>
+ 
+//make function factory and use it
+#define FUNCTION(name, a) int fun_##name() { return a;}
+ 
+FUNCTION(abcd, 12)
+FUNCTION(fff, 2)
+FUNCTION(qqq, 23)
+ 
+#undef FUNCTION
+#define FUNCTION 34
+#define OUTPUT(a) std::cout << #a << '\n'
+ 
+int main()
+{
+    std::cout << "abcd: " << fun_abcd() << '\n';
+    std::cout << "fff: " << fun_fff() << '\n';
+    std::cout << "qqq: " << fun_qqq() << '\n';
+    std::cout << FUNCTION << '\n';
+    OUTPUT(million);               //note the lack of quotes
+}
+Output:
 
+abcd: 12
+fff: 2
+qqq: 23
+34
+million
+========================================
