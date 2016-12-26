@@ -105,3 +105,16 @@ public:
 int a;
 int f(int a, int b = a); // error: lookup for a finds the parameter a, not ::a
                          // and parameters are not allowed as default arguments
+                         
+=============================================
+Static data member definition
+=============================
+For a name used in the definition of a static data member, lookup proceeds the same way as for a name used in the definition of a member function.
+
+struct X {
+    static int x;
+    static const int n = 1; // found 1st
+};
+int n = 2; // found 2nd.
+int X::x = n; // finds X::n, sets X::x to 1, not 2
+=============================================
