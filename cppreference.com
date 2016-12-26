@@ -11,3 +11,17 @@ namespace N {
 }
 N::foo<X> x; // error: X is looked up as ::X, not as N::X
 ===================
+http://en.cppreference.com/w/cpp/language/qualified_lookup
+----------------------------------------------------------
+====================================
+Definition outside of its namespace
+====================================
+For a name used in the definition of a namespace-member variable outside the namespace, lookup proceeds the same way as for a name used inside the namespace:
+
+namespace X {
+    extern int x; // declaration, not definition
+    int n = 1; // found 1st
+};
+int n = 2; // found 2nd.
+int X::x = n; // finds X::n, sets X::x to 1
+=====================================
