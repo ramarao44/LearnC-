@@ -150,3 +150,14 @@ void B::f() // definition of a member function of B
     a + a; // OK: member lookup finds B::operator+, non-member lookup
            // finds ::operator+(A,A), overload resolution selects ::operator+(A,A)
 }
+==============================
+When # appears before __VA_ARGS__, the entire expanded __VA_ARGS__ is enclosed in quotes:
+
+#define showlist(...) puts(#__VA_ARGS__)
+showlist();            // expands to puts("")
+showlist(1, "x", int); // expands to puts("1, \"x\", int")
+===============================================
+A ## operator between any two successive identifiers in the replacement-list runs parameter replacement on the two identifiers (which are not macro-expanded first) and then concatenates the result. This operation is called "concatenation" or "token pasting". Only tokens that form a valid token together may be pasted: identifiers that form a longer identifier, digits that form a number, or operators + and = that form a +=. A comment cannot be created by pasting / and * because comments are removed from text before macro substitution is considered. If the result of concatenation is not a valid token, the behavior is undefined.
+
+Note: some compilers offer an extension that allows ## to appear after a comma and before __VA_ARGS__, in which case the ## does nothing when __VA_ARGS__ is non-empty, but removes the comma when __VA_ARGS__ is empty: this makes it possible to define macros such as fprintf (stderr, format, ##__VA_ARGS__)
+
