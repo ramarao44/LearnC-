@@ -118,3 +118,35 @@ struct X {
 int n = 2; // found 2nd.
 int X::x = n; // finds X::n, sets X::x to 1, not 2
 =============================================
+Enumerator declaration
+=======================
+For a name used in the initializer part of the enumerator declaration, previously declared enumerators in the same enumeration are found first, before the unqualified name lookup proceeds to examine the enclosing block, class, or namespace scope.
+
+const int RED = 7;
+enum class color {
+    RED,
+    GREEN = RED+2, // RED finds color::RED, not ::RED, so GREEN = 2
+    BLUE = ::RED+4 // qualified lookup finds ::RED, BLUE = 11
+};
+=============================================
+Overloaded operator
+For an operator used in expression (e.g., operator+ used in a+b), the lookup rules are slightly different from the operator used in an explicit function-call expression such as operator+(a,b): when parsing an expression, two separate lookups are performed: for the non-member operator overloads and for the member operator overloads (for the operators where both forms are permitted). Those sets are then merged with the built-in operator overloads on equal grounds as described in overload resolution. If explicit function call syntax is used, regular unqualified name lookup is performed:
+=======================================
+struct A {};
+void operator+(A, A); // user-defined non-member operator+
+ 
+struct B {
+    void operator+(B); // user-defined member operator+
+    void f ();
+};
+ 
+A a;
+ 
+void B::f() // definition of a member function of B
+{
+    operator+(a,a); // error: regular name lookup from a member function
+                    // finds the declaration of operator+ in the scope of B
+                    // and stops there, never reaching the global scope
+    a + a; // OK: member lookup finds B::operator+, non-member lookup
+           // finds ::operator+(A,A), overload resolution selects ::operator+(A,A)
+}
