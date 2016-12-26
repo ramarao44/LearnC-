@@ -36,6 +36,34 @@ namespace A {
 }
  
 int i=5; // found 5th (if 4th is not present)
+=================================================
+Pre-increment and pre-decrement operators increments or decrements the value of the object and returns a reference to the result.
+
+Post-increment and post-decrement creates a copy of the object, increments or decrements the value of the object and returns the copy from before the increment or decrement.
+
+Built-in prefix operators
+For every optionally volatile-qualified arithmetic type A other than bool, and for every optionally volatile-qualified pointer P to optionally cv-qualified object type, the following function signatures participate in overload resolution:
+
+A& operator++(A&)
+bool& operator++(bool&)
+(deprecated)(until C++17)
+P& operator++(P&)
+A& operator--(A&)
+P& operator--(P&)
+The operand of a built-in prefix increment or decrement operator must be a modifiable (non-const) lvalue of non-boolean arithmetic type or pointer to complete object type. For non-boolean operands, the expression ++x is exactly equivalent to x += 1, and the expression --x is exactly equivalent to x -= 1, that is, the prefix increment or decrement is an lvalue expression that identifies the modified operand. All arithmetic conversion rules and pointer arithmetic rules defined for arithmetic operators apply.
+
+If the operand of the pre-increment operator is of type bool, it is set to true (deprecated). (until C++17)
+
+Built-in postfix operators
+For every optionally volatile-qualified arithmetic type A other than bool, and for every optionally volatile-qualified pointer P to optionally cv-qualified object type, the following function signatures participate in overload resolution:
+
+A operator++(A&, int)
+bool operator++(bool&, int)
+(deprecated)(until C++17)
+P operator++(P&, int)
+A operator--(A&, int)
+P operator--(P&, int)
+======================================
  
 void A::N::f() {
     int i = 2; // found 2nd (if 1st is not present)
@@ -190,3 +218,30 @@ qqq: 23
 34
 million
 ========================================
+Pre-increment and pre-decrement operators increments or decrements the value of the object and returns a reference to the result.
+
+Post-increment and post-decrement creates a copy of the object, increments or decrements the value of the object and returns the copy from before the increment or decrement.
+
+Built-in prefix operators
+For every optionally volatile-qualified arithmetic type A other than bool, and for every optionally volatile-qualified pointer P to optionally cv-qualified object type, the following function signatures participate in overload resolution:
+
+A& operator++(A&)
+bool& operator++(bool&)
+(deprecated)(until C++17)
+P& operator++(P&)
+A& operator--(A&)
+P& operator--(P&)
+The operand of a built-in prefix increment or decrement operator must be a modifiable (non-const) lvalue of non-boolean arithmetic type or pointer to complete object type. For non-boolean operands, the expression ++x is exactly equivalent to x += 1, and the expression --x is exactly equivalent to x -= 1, that is, the prefix increment or decrement is an lvalue expression that identifies the modified operand. All arithmetic conversion rules and pointer arithmetic rules defined for arithmetic operators apply.
+
+If the operand of the pre-increment operator is of type bool, it is set to true (deprecated). (until C++17)
+
+Built-in postfix operators
+For every optionally volatile-qualified arithmetic type A other than bool, and for every optionally volatile-qualified pointer P to optionally cv-qualified object type, the following function signatures participate in overload resolution:
+
+A operator++(A&, int)
+bool operator++(bool&, int)
+(deprecated)(until C++17)
+P operator++(P&, int)
+A operator--(A&, int)
+P operator--(P&, int)
+================================
