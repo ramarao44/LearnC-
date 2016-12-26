@@ -70,3 +70,38 @@ namespace N {
 }
 // const int i = 5; // never found
 ===================================
+// the class whose member functions are friended
+===============================================
+struct A { 
+    typedef int AT;
+    void f1(AT);
+    void f2(float);
+    template <class T> void f3();
+};
+ 
+// the class that is granting friendship
+struct B {
+    typedef char AT;
+    typedef float BT;
+    friend void A::f1(AT); // lookup for AT finds A::AT
+    friend void A::f2(BT); // lookup for BT finds B::BT 
+    friend void A::f3<AT>(); // lookup for AT finds B::AT 
+};
+==========================================
+Default arguments
+==========================================
+
+class X {
+    int a, b, i, j;
+public:
+    const int& r;
+    X(int i): r(a), // initializes X::r to refer to X::a
+              b(i), // initializes X::b to the value of the parameter i
+              i(i), // initializes X::i to the value of the parameter i
+              j(this->i) // initializes X::j to the value of X::i
+    { }
+}
+ 
+int a;
+int f(int a, int b = a); // error: lookup for a finds the parameter a, not ::a
+                         // and parameters are not allowed as default arguments
