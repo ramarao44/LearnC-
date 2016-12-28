@@ -690,5 +690,115 @@ std::string& r = f(); // dangling reference
 std::cout << r;       // undefined behavior: reads from a dangling reference
 std::string s = f();  // undefined behavior: copy-initializes from a dangling reference
 ===================================
+pointer declaration
+===================================
+int n;
+int* np = &n; // pointer to int
+int* const* npp = &np; // non-const pointer to const pointer to non-const int
+ 
+int a[2];
+int (*ap)[2] = &a; // pointer to array of int
+ 
+struct S { int n; };
+S s = {1};
+int* sp = &s.n; // pointer to the int that is a member of s
+========================================
+int n;
+int* p = &n;     // pointer to n
+int& r = *p;     // reference is bound to the lvalue expression that identifies n
+r = 7;           // stores the int 7 in n
+std::cout << *p; // lvalue-to-rvalue implicit conversion reads the value from n
+==================
+int a[2];
+int* p1 = a; // pointer to the first element a[0] (an int) of the array a
+ 
+int b[6][3][8];
+int (*p2)[3][8] = b; // pointer to the first element b[0] of the array b,
+                     // which is an array of 3 arrays of 8 ints
+ ===============================Because of the derived-to-base implicit conversion for pointers, pointer to a base class can be initialized with the address of a derived class:
 
+struct Base {};
+struct Derived : Base {};
+ 
+Derived d;
+Base* p = &d;
+If Derived is polymorphic, such pointer may be used to make virtual function calls.
+=====================
+pointer to functions
+=======================
+Pointers to functions
+A pointer to function can be initialized with an address of a non-member function or a static member function. Because of the function-to-pointer implicit conversion, the address-of operator is optional:
 
+void f(int);
+void (*p1)(int) = &f;
+void (*p2)(int) = f; // same as &f
+=========================
+Dereferencing a function pointer yields the lvalue identifying the pointed-to function:
+
+int f();
+int (*p)() = f;  // pointer p is pointing to f
+int (&r)() = *p; // the lvalue that identifies f is bound to a reference
+r();             // function f invoked through lvalue reference
+(*p)();          // function f invoked through the function lvalue
+p();             // function f invoked directly through the pointer
+===============================
+A pointer to function may be initialized from an overload set which may include functions, function template specializations, and function templates, if only one overload matches the type of the pointer (see address of an overloaded function for more detail):
+
+template<typename T> T f(T n) { return n; }
+double f(double n) { return n; }
+ 
+int main()
+{
+    int (*p)(int) = f; // instantiates and selects f<int>
+}
+==================================
+Pointers to data members
+A pointer to non-static member object m which is a member of class C can be initialized with the expression &C::m exactly. Expressions such as &(C::m) or &m inside C's member function do not form pointers to members.
+
+Such pointer may be used as the right-hand operand of the pointer-to-member access operators operator.* and operator->*:
+
+struct C { int m; };
+ 
+int main()
+{
+    int C::* p = &C::m;          // pointer to data member m of class C
+    C c = {7};
+    std::cout << c.*p << '\n';   // prints 7
+    C* cp = &c;
+    cp->m = 10;
+    std::cout << cp->*p << '\n'; // prints 10
+}
+=========================
+Pointer to data member of an accessible unambiguous non-virtual base class can be implicitly converted to pointer to the same data member of a derived class:
+
+struct Base { int m; };
+struct Derived : Base {};
+ 
+int main()
+{
+    int Base::* bp = &Base::m;
+    int Derived::* dp = bp;
+    Derived d;
+    d.m = 1;
+    std::cout << d.*dp << ' ' << d.*bp << '\n'; // prints 1 1
+}
+=============================
+Conversion in the opposite direction, from a pointer to data member of a derived class to a pointer to data member of an unambiguous non-virtual base class, is allowed with static_cast and explicit cast, even if the base class does not have that member (but the most-derived class does, when the pointer is used for access):
+
+struct Base {};
+struct Derived : Base { int m; };
+ 
+int main()
+{
+    int Derived::* dp = &Derived::m;
+    int Base::* bp = static_cast<int Base::*>(dp);
+ 
+    Derived d;
+    d.m = 7;
+    std::cout << d.*bp << '\n'; // okay: prints 7
+ 
+    Base b;
+    std::cout << b.*bp << '\n'; // undefined behavior
+}
+================================
+ 
