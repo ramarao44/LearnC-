@@ -410,3 +410,125 @@ int main()
     delete b2;
 }
 ==============================================
+namespace defination only after declaration and within enclosing 
+==============================================
+namespace Q {
+  namespace V { // original-namespace-definition for V
+    void f(); // declaration of Q::V::f
+  }
+  void V::f() {} // OK
+  void V::g() {} // Error: g() is not yet a member of V
+  namespace V { // extension-namespace-definition for V
+    void g(); // declaration of Q::V::g
+  }
+}
+namespace R { // not a enclosing namespace for Q
+   void Q::V::g() {} // Error: cannot define Q::V::g inside R
+}
+void Q::V::g() {} // OK: global namespace encloses Q
+==============================================
+friend functions in namespace
+=================================================
+void h(int);
+namespace A {
+  class X {
+    friend void f(X); // A::f is a friend
+    class Y {
+        friend void g(); // A::g is a friend
+        friend void h(int); // A::h is a friend, no conflict with ::h
+    };
+  };
+  // A::f, A::g and A::h are not visible at namespace scope
+  // even though they are members of the namespace A
+  X x;
+  void g() {  // definition of A::g
+     f(x); // A::X::f is found through ADL
+  }
+  void f(X) {}       // definition of A::f
+  void h(int) {}     // definition of A::h
+  // A::f, A::g and A::h are now visible at namespace scope
+  // and they are also friends of A::X and A::X::Y
+}
+=====================================================
+unnamed namespace
+====================================
+namespace {
+    int i;  // defines ::(unique)::i
+}
+void f() {
+    i++;  // increments ::(unique)::i
+}
+ 
+namespace A {
+    namespace {
+        int i; // A::(unique)::i
+        int j; // A::(unique)::j
+    }
+    void g() { i++; } // A::unique::i++
+}
+ 
+using namespace A; // introduces all names from A into global namespace
+void h() {
+    i++;    // error: ::(unique)::i and ::A::(unique)::i are both in scope
+    A::i++; // ok, increments ::A::(unique)::i
+    j++;    // ok, increments ::A::(unique)::j
+}
+=====================================
+using declaration
+===========================
+void f();
+namespace A {
+    void g();
+}
+namespace X {
+    using ::f; // global f is now visible as ::X::f
+    using A::g; // A::g is now visible as ::X::g
+    using A::g, A::g; // (C++17) OK: double declaration allowed at namespace scope
+}
+void h()
+{
+    X::f(); // calls ::f
+    X::g(); // calls A::g
+}
+=====================
+namespace extension
+======================
+namespace A {
+    void f(int);
+}
+using A::f; // ::f is now a synonym for A::f(int)
+ 
+namespace A { // namespace extension
+   void f(char); // does not change what ::f means
+}
+void foo() {
+    f('a'); // calls f(int), even though f(char) exists.
+} 
+void bar() {
+   using A::f; // this f is a synonym for both A::f(int) and A::f(char)
+   f('a'); // calls f(char)
+}
+=================================
+Inner namespaces are preferred
+=================================
+namespace A {
+    int i;
+}
+namespace B {
+    int i;
+    int j;
+    namespace C {
+        namespace D {
+            using namespace A; // all names from A injected into global namespace
+            int j;
+            int k;
+            int a = i; // i is B::i, because A::i is hidden by B::i
+        }
+        using namespace D; // names from D are injected into C
+                           // names from A are injected into global namespace
+        int k = 89; // OK to declare name identical to one introduced by a using
+        int l = k;  // ambiguous: C::k or D::k
+        int m = i;  // ok: B::i hides A::i
+        int n = j;  // ok: D::j hides B::j
+    }
+}
