@@ -532,3 +532,145 @@ namespace B {
         int n = j;  // ok: D::j hides B::j
     }
 }
+====================
+redeclaration of namesapce member
+===============================
+namespace D {
+   int d1;
+   void f(char);
+}
+using namespace D; // introduces D::d1, D::f, D::d2, D::f,
+                   //  E::e, and E::f into global namespace!
+ 
+int d1; // OK: no conflict with D::d1 when declaring
+namespace E {
+    int e;
+    void f(int);
+}
+namespace D { // namespace extension
+    int d2;
+    using namespace E; // transitive using-directive
+    void f(int);
+}
+void f() {
+    d1++; // error: ambiguous ::d1 or D::d1?
+    ::d1++; // OK
+    D::d1++; // OK
+    d2++; // OK, d2 is D::d2
+    e++; // OK: e is E::e due to transitive using
+    f(1); // error: ambiguous: D::f(int) or E::f(int)?
+    f('a'); // OK: the only f(char) is D::f(char)
+}
+============================
+Reference
+==============================
+Declares a named variable as a reference, that is, an alias to an already-existing object or function.
+
+Syntax
+A reference variable declaration is any simple declaration whose declarator has the form
+
+& attr(optional) declarator	(1)	lvalue decl
+&& attr(optional) declarator	(2)	rvalue decl  (since C++11)
+
+A reference is required to be initialized to refer to a valid object or function: see reference initialization.
+
+There are no references to void and no references to references.
+Reference types cannot be cv-qualified at the top level; there is no syntax for that in declaration, 
+and if a qualification is introduced through a typedef, decltype, or template type argument, it is ignored.
+References are not objects; they do not necessarily occupy storage, although the compiler may allocate 
+storage if it is necessary to implement the desired semantics (e.g. a non-static data member of reference
+type usually increases the size of the class by the amount necessary to store a memory address).
+
+Because references are not objects, there are no arrays of references, no pointers to references, 
+and no references to references:
+
+
+int& a[3]; // error
+int&* p;   // error
+int& &r;   // error
+======================
+const reference
+================
+int main()
+{
+    std::string s = "Ex";
+    std::string& r1 = s;
+    const std::string& r2 = s;
+ 
+    r1 += "ample";           // modifies s
+//  r2 += "!";               // error: cannot modify through reference to const
+    std::cout << r2 << '\n'; // prints s, which now holds "Example"
+}
+===========================
+function call reference
+=======================
+#include <iostream>
+#include <string>
+ 
+char& char_number(std::string& s, std::size_t n)
+{
+    return s.at(n); // string::at() returns a reference to char
+}
+ 
+int main()
+{
+    std::string str = "Test";
+    char_number(str, 1) = 'a'; // the function call is lvalue, can be assigned to
+    std::cout << str << '\n';
+}
+================================
+Rvalue references
+Rvalue references can be used to extend the lifetimes of temporary objects
+(note, lvalue references to const can extend the lifetimes of temporary objects too, 
+but they are not modifiable through them):
+========================
+const reference
+=========================
+#include <iostream>
+#include <string>
+ 
+int main()
+{
+    std::string s1 = "Test";
+//  std::string&& r1 = s1;           // error: can't bind to lvalue
+ 
+    const std::string& r2 = s1 + s1; // okay: lvalue reference to const extends lifetime
+//  r2 += "Test";                    // error: can't modify through reference to const
+ 
+    std::string&& r3 = s1 + s1;      // okay: rvalue reference extends lifetime
+    r3 += "Test";                    // okay: can modify through reference to non-const
+    std::cout << r3 << '\n';
+}
+========================
+reference function overload
+=======================
+#include <iostream>
+#include <utility>
+ 
+void f(int& x)
+{
+    std::cout << "lvalue reference overload f(" << x << ")\n";
+}
+ 
+void f(const int& x)
+{
+    std::cout << "lvalue reference to const overload f(" << x << ")\n";
+}
+ 
+void f(int&& x)
+{
+    std::cout << "rvalue reference overload f(" << x << ")\n";
+}
+ 
+int main()
+{
+    int i = 1;
+    const int ci = 2;
+    f(i);  // calls f(int&)
+    f(ci); // calls f(const int&)
+    f(3);  // calls f(int&&)
+           // would call f(const int&) if f(int&&) overload wasn't provided
+    f(std::move(i)); // calls f(int&&)
+}
+=====================================
+
