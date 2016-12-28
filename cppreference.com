@@ -801,4 +801,155 @@ int main()
     std::cout << b.*bp << '\n'; // undefined behavior
 }
 ================================
+Pointers to member functions
+A pointer to non-static member function f which is a member of class C can be initialized with the expression &C::f exactly. Expressions such as &(C::f) or &f inside C's member function do not form pointers to member functions.
+
+Such pointer may be used as the right-hand operand of the pointer-to-member access operators operator.* and operator->*. The resulting expression can be used only as the left-hand operand of a function-call operator:
+
+struct C
+{
+    void f(int n) { std::cout << n << '\n'; }
+};
  
+int main()
+{
+    void (C::* p)(int) = &C::f; // pointer to member function f of class C
+    C c;
+    (c.*p)(1);                  // prints 1
+    C* cp = &c;
+    (cp->*p)(2);                // prints 2
+}
+
+Pointer to member function of a base class can be implicitly converted to pointer to the same member function of a derived class:
+=====================
+pointer to member function of a base class 
+==================================
+Pointer to member function of a base class can be implicitly converted to pointer to the same member function of a derived class:
+
+struct Base
+{
+    void f(int n) { std::cout << n << '\n'; }
+};
+struct Derived : Base {};
+ 
+int main()
+{
+    void (Base::* bp)(int) = &Base::f;
+    void (Derived::* dp)(int) = bp;
+    Derived d;
+    (d.*dp)(1);
+    (d.*bp)(2);
+}
+========================================
+Array-to-pointer decay
+There is an implicit conversion from lvalues and rvalues of array type to rvalues of pointer type: it constructs a pointer to the first element of an array. This conversion is used whenever arrays appear in context where arrays are not expected, but pointers are:
+
+Run this code
+#include <iostream>
+#include <numeric>
+#include <iterator>
+ 
+void g(int (&a)[3])
+{
+    std::cout << a[0] << '\n';
+}
+ 
+void f(int* p)
+{
+    std::cout << *p << '\n';
+}
+ 
+int main()
+{
+    int a[3] = {1, 2, 3};
+    int* p = a;
+ 
+    std::cout << sizeof a << '\n'  // prints size of array
+              << sizeof p << '\n'; // prints size of a pointer
+ 
+    // where arrays are acceptable, but pointers aren't, only arrays may be used
+    g(a); // okay: function takes an array by reference
+//  g(p); // error
+ 
+    for(int n: a)              // okay: arrays can be used in range-for loops
+        std::cout << n << ' '; // prints elements of the array
+//  for(int n: p)              // error
+//      std::cout << n << ' ';
+ 
+    std::iota(std::begin(a), std::end(a), 7); // okay: begin and end take arrays
+//  std::iota(std::begin(p), std::end(p), 7); // error
+ 
+    // where pointers are acceptable, but arrays aren't, both may be used:
+    f(a); // okay: function takes a pointer
+    f(p); // okay: function takes a pointer
+ 
+    std::cout << *a << '\n' // prints the first element
+              << *p << '\n' // same
+              << *(a + 1) << ' ' << a[1] << '\n'  // prints the second element
+              << *(p + 1) << ' ' << p[1] << '\n'; // same
+ ================================================
+ int a[2];            // array of 2 int
+int* p1 = a;         // a decays to a pointer to the first element of a
+ 
+int b[2][3];         // array of 2 arrays of 3 int
+// int** p2 = b;     // error: b does not decay to int**
+int (*p2)[3] = b;    // b decays to a pointer to the first 3-element row of b
+ 
+int c[2][3][4];      // array of 2 arrays of 3 arrays of 4 int
+// int*** p3 = c;    // error: c does not decay to int***
+int (*p3)[3][4] = c; // c decays to a pointer to the first 3 × 4-element plane of c
+====================================
+Arrays of unknown bound
+If expr is omitted in the declaration of an array, the type declared is "array of unknown bound of T", which is a kind of incomplete type, except when used in a declaration with an aggregate initializer:
+
+extern int x[];      // the type of x is "array of unknown bound of int"
+int a[] = {1, 2, 3}; // the type of a is "array of 3 int"
+Because array element cannot have incomplete type, multidimensional arrays cannot have unknown bound in a dimension other than the first:
+
+extern int a[][2]; // okay: array of unknown bound of arrays of 2 int
+extern int b[2][]; // error: array has incomplete element type
+References and pointers to arrays of unknown bound can be formed, but cannot be initialized or assigned from arrays and pointers to arrays of known bound. Note that in the C programming language, pointers to arrays of unknown bound are compatible with pointers to arrays of known bound and are thus convertible and assignable in both directions.
+
+extern int a1[];
+int (&r1)[] = a1;  // okay
+int (*p1)[] = &a1; // okay
+int (*q)[2] = &a1; // error (but okay in C)
+ 
+int a2[] = {1, 2, 3};
+int (&r2)[] = a2;  // error
+int (*p2)[] = &a2; // error (but okay in C)
+Pointers to arrays of unknown bound cannot participate in pointer arithmetic and cannot be used on the left of the 
+subscript operator, but can be dereferenced. Pointers and references to arrays of unknown bound cannot be used in 
+function parameters (until C++14).
+===============================
+#include <iostream>
+#include <type_traits>
+#include <utility>
+ 
+void f(int (&&x)[2][3])
+{
+    std::cout << sizeof x << '\n';
+}
+ 
+struct X
+{
+    int i[2][3];
+} x;
+ 
+template<typename T> using identity = T;
+ 
+int main()
+{
+    std::cout << sizeof X().i << '\n';           // size of the array
+    f(X().i);                                    // okay: binds to xvalue
+//  f(x.i);                                      // error: cannot bind to lvalue
+ 
+    int a[2][3];
+    f(std::move(a));                             // okay: binds to xvalue
+ 
+    using arr_t = int[2][3];
+    f(arr_t{});                                  // okay: binds to prvalue
+    f(identity<int[][3]>{{1, 2, 3}, {4, 5, 6}}); // okay: binds to prvalue
+ 
+}
+=======================================
