@@ -953,3 +953,265 @@ int main()
  
 }
 =======================================
+enumeration
+=====================
+enum Color { red, green, blue };
+Color r = red;
+switch(r)
+{
+    case red  : std::cout << "red\n";   break;
+    case green: std::cout << "green\n"; break;
+    case blue : std::cout << "blue\n";  break;
+}
+=================
+enum color { red, yellow, green = 20, blue };
+color col = red;
+int n = blue; // n == 21
+=====
+enum access_t { read = 1, write = 2, exec = 4 }; // enumerators: 1, 2, 4 range: 0..7
+access_t rw = static_cast<access_t>(3);
+assert(rw & read && rw & write);
+=================================
+When an unscoped enumeration is a class member, its enumerators may be accessed using class member access operators . and ->:
+
+struct X
+{
+    enum direction { left = 'l', right = 'r' };
+};
+X x;
+X* p = &x;
+ 
+int a = X::direction::left; // allowed only in C++11 and later
+int b = X::left;
+int c = x.left;
+int d = p->left;
+============================
+enum class Color { red, green = 20, blue };
+Color r = Color::blue;
+switch(r)
+{
+    case Color::red  : std::cout << "red\n";   break;
+    case Color::green: std::cout << "green\n"; break;
+    case Color::blue : std::cout << "blue\n";  break;
+}
+// int n = r; // error: no scoped enum to int conversion
+int n = static_cast<int>(r); // OK, n = 21
+==============================
+storage
+=============================
+Linkage
+A name that denotes object, reference, function, type, template, namespace, or value, may have linkage. If a name has linkage, it refers to the same entity as the same name introduced by a declaration in another scope. If a variable, function, or another entity with the same name is declared in several scopes, but does not have sufficient linkage, then several instances of the entity are generated.
+
+The following linkages are recognized:
+
+no linkage. The name can be referred to only from the scope it is in.
+Any of the following names declared at block scope have no linkage:
+Variables that aren't explicitly declared extern (regardless of the static modifier)
+Local classes and their member functions
+Other names declared at block scope such as typedefs, enumerations, and enumerators
+internal linkage. The name can be referred to from all scopes in the current translation unit.
+Any of the following names declared at namespace scope have internal linkage
+variables, functions, or function templates declared static
+non-volatile non-inline (since C++17) const-qualified variables (including constexpr) that aren't declared extern and aren't previously declared to have external linkage.
+data members of anonymous unions
+In addition, all names declared in unnamed namespace or a namespace within an unnamed namespace, even ones explicitly declared extern, have internal linkage.
+(since C++11)
+external linkage. The name can be referred to from the scopes in the other translation units. Variables and functions with external linkage also have language linkage, which makes it possible to link translation units written in different programming languages.
+Any of the following names declared at namespace scope have external linkage unless the namespace is unnamed or is contained within an unnamed namespace (since C++11)
+variables and functions not listed above (that is, functions not declared static, namespace-scope non-const variables not declared static, and any variables declared extern)
+enumerations and enumerators
+names of classes, their member functions, static data members (const or not), nested classes and enumerations, and functions first introduced with friend declarations inside class bodies
+names of all templates not listed above (that is, not function templates declared static)
+Any of the following names first declared at block scope have external linkage
+names of variables declared extern
+names of functions
+Static local variables
+Variables declared at block scope with the specifier static have static storage duration but are initialized the first time control passes through their declaration (unless their initialization is zero- or constant-initialization, which can be performed before the block is first entered). On all further calls, the declaration is skipped.
+
+If the initialization throws an exception, the variable is not considered to be initialized, and initialization will be attempted again the next time control passes through the declaration.
+
+If the initialization recursively enters the block in which the variable is being initialized, the behavior is undefined.
+
+If multiple threads attempt to initialize the same static local variable concurrently, the initialization occurs exactly once (similar behavior can be obtained for arbitrary functions with std::call_once).
+Note: usual implementations of this feature use variants of the double-checked locking pattern, which reduces runtime overhead for already-initialized local statics to a single non-atomic boolean comparison.	(since C++11)
+The destructor for a block-scope static variable is called at program exit, but only if the initialization took place successfully.
+========================
+Default initialization
+=======================
+Explanation
+Default initialization is performed in three situations:
+
+1) when a variable with automatic, static, or thread-local storage duration is declared with no initializer;
+2) when an object with dynamic storage duration is created by a new-expression with no initializer or when an object is created by a new-expression with the initializer consisting of an empty pair of parentheses (until C++03);
+3) when a base class or a non-static data member is not mentioned in a constructor initializer list and that constructor is called.
+=============================
+value initialization
+===========================
+include <string>
+#include <vector>
+#include <iostream>
+ 
+struct T1
+{
+    int mem1;
+    std::string mem2;
+}; // implicit default constructor
+ 
+struct T2
+{
+    int mem1;
+    std::string mem2;
+    T2(const T2&) { } // user-provided copy constructor
+};                    // no default constructor
+ 
+struct T3
+{
+    int mem1;
+    std::string mem2;
+    T3() { } // user-provided default constructor
+};
+ 
+std::string s{}; // class => default-initialization, the value is ""
+ 
+int main()
+{
+    int n{};                // scalar => zero-initialization, the value is 0
+    double f = double();    // scalar => zero-initialization, the value is 0.0
+    int* a = new int[10](); // array => value-initialization of each element
+                            //          the value of each element is 0
+    T1 t1{};                // class with implicit default constructor =>
+                            //     t1.mem1 is zero-initialized, the value is 0
+                            //     t1.mem2 is default-initialized, the value is ""
+//  T2 t2{};                // error: class with no default constructor
+    T3 t3{};                // class with user-provided default constructor =>
+                            //     t3.mem1 is default-initialized to indeterminate value
+                            //     t3.mem2 is default-initialized, the value is ""
+    std::vector<int> v(3);  // value-initialization of each element
+                            // the value of each element is 0
+    std::cout << s.size() << ' ' << n << ' ' << f << ' ' << a[9] << ' ' << v[2] << '\n';
+    std::cout << t1.mem1 << ' ' << t3.mem1 << '\n';
+    delete[] a
+    ===================================
+Possible output:
+
+0 0 0 0 0
+0 4199376
+===================
+Copy-initialization is less permissive than direct-initialization: explicit constructors are not converting constructors and are not considered for copy-initialization.
+
+struct Exp { explicit Exp(const char*) {} }; // not convertible from const char*
+Exp e1("abc");  // OK
+Exp e2 = "abc"; // Error, copy-initialization does not consider explicit constructor
+ 
+struct Imp { Imp(const char*) {} }; // convertible from const char*
+Imp i1("abc");  // OK
+Imp i2 = "abc"; // OK
+In addition, the implicit conversion in copy-initialization must produce T directly from the initializer, while, e.g. direct-initialization expects an implicit conversion from the initializer to an argument of T's constructor.
+
+struct S { S(std::string) {} }; // implicitly convertible from std::string
+S s("abc"); // OK: conversion from const char[4] to std::string
+S s = "abc"; // Error: no conversion from const char[4] to S
+S s = "abc"s; // OK: conversion from std::string to S
+============================
+Explanation
+Direct initialization is performed in the following situations:
+
+1) initialization with a nonempty parenthesized list of expressions
+2) during list-initialization sequence, if no initializer-list constructors are provided and a matching constructor is accessible, and all necessary implicit conversions are non-narrowing.
+3) initialization of a prvalue temporary by functional cast or with a parenthesized expression list
+4) initialization of a prvalue temporary by a static_cast expression
+5) initialization of an object with dynamic storage duration by a new-expression with a non-empty initializer
+6) initialization of a base or a non-static member by constructor initializer list
+7) initialization of closure object members from the variables caught by copy in a lambda-expression
+=================
+#include <string>
+#include <iostream>
+#include <memory>
+ 
+struct Foo {
+    int mem;
+    explicit Foo(int n) : mem(n) {}
+};
+ 
+int main()
+{
+    std::string s1("test"); // constructor from const char*
+    std::string s2(10, 'a');
+ 
+    std::unique_ptr<int> p(new int(1)); // OK: explicit constructors allowed
+//  std::unique_ptr<int> p = new int(1); // error: constructor is explicit
+ 
+    Foo f(2); // f is direct-initialized:
+              // constructor parameter n is copy-initialized from the rvalue 2
+              // f.mem is direct-initialized from the parameter n
+//  Foo f2 = 2; // error: constructor is explicit
+ 
+    std::cout << s1 << ' ' << s2 << ' ' << *p << ' ' << f.mem  << '\n';
+}
+===========================
+aggregate initialization
+=======================
+#include <string>
+#include <array>
+struct S {
+    int x;
+    struct Foo {
+        int i;
+        int j;
+        int a[3];
+    } b;
+};
+ 
+union U {
+    int a;
+    const char* b;
+};
+ 
+int main()
+{
+    S s1 = { 1, { 2, 3, {4, 5, 6} } };
+    S s2 = { 1, 2, 3, 4, 5, 6}; // same, but with brace elision
+    S s3{1, {2, 3, {4, 5, 6} } }; // same, using direct-list-initialization syntax
+    S s4{1, 2, 3, 4, 5, 6}; // error in C++11: brace-elision only allowed with equals sign
+                            // okay in C++14
+ 
+    int ar[] = {1,2,3}; // ar is int[3]
+//  char cr[3] = {'a', 'b', 'c', 'd'}; // too many initializer clauses
+    char cr[3] = {'a'}; // array initialized as {'a', '\0', '\0'}
+ 
+    int ar2d1[2][2] = {{1, 2}, {3, 4}}; // fully-braced 2D array: {1, 2}
+                                        //                        {3, 4}
+    int ar2d2[2][2] = {1, 2, 3, 4}; // brace elision: {1, 2}
+                                    //                {3, 4}
+    int ar2d3[2][2] = {{1}, {2}};   // only first column: {1, 0}
+                                    //                    {2, 0}
+ 
+    std::array<int, 3> std_ar2{ {1,2,3} };    // std::array is an aggregate
+    std::array<int, 3> std_ar1 = {1, 2, 3}; // brace-elision okay
+ 
+    int ai[] = { 1, 2.0 }; // narrowing conversion from double to int:
+                           // error in C++11, okay in C++03
+ 
+    std::string ars[] = {std::string("one"), // copy-initialization
+                         "two",              // conversion, then copy-initialization
+                         {'t', 'h', 'r', 'e', 'e'} }; // list-initialization
+ 
+    U u1 = {1}; // OK, first member of the union
+//    U u2 = { 0, "asdf" }; // error: too many initializers for union
+//    U u3 = { "asdf" }; // error: invalid conversion to int
+ 
+}
+ 
+// aggregate
+struct base1 { int b1, b2 = 42; };
+// non-aggregate
+struct base2 {
+  base2() : b3(42) {}
+  int b3;
+};
+// aggregate in C++17
+struct derived : base1, base2 { int d; };
+derived d1{ {1, 2}, { }, 4}; // d1.b1 = 1, d1.b2 = 2,  d1.b3 = 42, d1.d = 4
+derived d2{ {    }, { }, 4}; // d2.b1 = 0, d2.b2 = 42, d2.b3 = 42, d2.d = 4
+======================
+
