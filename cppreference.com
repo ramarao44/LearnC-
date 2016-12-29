@@ -1511,3 +1511,564 @@ struct X
 };
 const int X::k = 3;
 =====================
+USING 
+=======================
+#include <iostream>
+struct B {
+    virtual void f(int) { std::cout << "B::f\n"; }
+    void g(char)        { std::cout << "B::g\n"; }
+    void h(int)         { std::cout << "B::h\n"; }
+ protected:
+    int m; // B::m is protected
+    typedef int value_type;
+};
+ 
+struct D : B {
+    using B::m; // D::m is public
+    using B::value_type; // D::value_type is public
+ 
+    using B::f;
+    void f(int) { std::cout << "D::f\n"; } // D::f(int) overrides B::f(int)
+    using B::g;
+    void g(int) { std::cout << "D::g\n"; } // both g(int) and g(char) are visible
+                                           // as members of D
+    using B::h;
+    void h(int) { std::cout << "D::h\n"; } // D::h(int) hides B::h(int)
+};
+ 
+int main()
+{
+    D d;
+    B& b = d;
+ 
+//    b.m = 2; // error, B::m is protected
+    d.m = 1; // protected B::m is accessible as public D::m
+    b.f(1); // calls derived f()
+    d.f(1); // calls derived f()
+    d.g(1); // calls derived g(int)
+    d.g('a'); // calls base g(char)
+    b.h(1); // calls base h()
+    d.h(1); // calls derived h()
+}
+Output:
+
+D::f
+D::f
+D::g
+B::g
+B::h
+D::h
+===============================
+#include <iostream>
+struct Base {
+   virtual void f() {
+       std::cout << "base\n";
+   }
+};
+struct Derived : Base {
+    void f() override { // 'override' is optional
+        std::cout << "derived\n";
+    }
+};
+int main()
+{
+    Base b;
+    Derived d;
+ 
+    // virtual function call through reference
+    Base& br = b; // the type of br is Base&
+    Base& dr = d; // the type of dr is Base& as  well
+    br.f(); // prints "base"
+    dr.f(); // prints "derived"
+ 
+    // virtual function call through pointer
+    Base* bp = &b; // the type of bp is Base*
+    Base* dp = &d; // the type of dp is Base* as  well
+    bp->f(); // prints "base"
+    dp->f(); // prints "derived"
+ 
+    // non-virtual function call
+    br.Base::f(); // prints "base"
+    dr.Base::f(); // prints "base"
+}
+=======================================
+struct A { virtual void f(); };     // A::f is virtual
+struct B : A { void f(); };         // B::f overrides A::f in B
+struct C : virtual B { void f(); }; // C::f overrides A::f in C
+struct D : virtual B {}; // D does not introduce an overrider, B::f is final in D
+struct E : C, D  {       // E does not introduce an overrider, C::f is final in E
+    using A::f; // not a function declaration, just makes A::f visible to lookup
+};
+int main() {
+   E e;
+   e.f();    // virtual call calls C::f, the final overrider in e
+   e.E::f(); // non-virtual call calls A::f, which is visible in E
+}
+=====================
+final override function
+====================
+struct A {
+    virtual void f();
+};
+struct VB1 : virtual A {
+    void f(); // overrides A::f
+};
+struct VB2 : virtual A {
+    void f(); // overrides A::f
+};
+// struct Error : VB1, VB2 {
+//     // Error: A::f has two final overriders in Error
+// };
+struct Okay : VB1, VB2 {
+    void f(); // OK: this is the final overrider for A::f
+};
+struct VB1a : virtual A {}; // does not declare an overrider
+struct Da : VB1a, VB2 {
+    // in Da, the final overrider of A::f is VB2::f
+}
+=====================
+struct B {
+    virtual void f();
+};
+struct D : B {
+    void f(int); // D::f hides B::f (wrong parameter list)
+};
+struct D2 : D {
+    void f(); // D2::f overrides B::f (doesn't matter that it's not visible)
+};
+ 
+int main()
+{
+    B b;   B& b_as_b   = b;
+    D d;   B& d_as_b   = d;    D& d_as_d = d;
+    D2 d2; B& d2_as_b  = d2;   D& d2_as_d = d2;
+ 
+    b_as_b.f(); // calls B::f()
+    d_as_b.f(); // calls B::f()
+    d2_as_b.f(); // calls D2::f()
+ 
+    d_as_d.f(); // Error: lookup in D finds only f(int)
+    d2_as_d.f(); // Error: lookup in D finds only f(int)
+}
+===================
+Non-member functions and static member functions cannot be virtual.
+
+Functions templates cannot be declared virtual. This applies only to functions that are themselves templates - a regular member function of a class template can be declared virtual.
+
+Virtual functions cannot have any associated constraints.
+
+========================
+Virtual destructor
+Even though destructors are not inherited, if a base class declares its destructor virtual, the derived destructor always overrides it. This makes it possible to delete dynamically allocated objects of polymorphic type through pointers to base
+
+class Base {
+ public:
+    virtual ~Base() { /* releases Base's resources */ }
+};
+ 
+class Derived : public Base {
+    ~Derived() { /* releases Derived's resources */ }
+};
+ 
+int main()
+{
+    Base* b = new Derived;
+    delete b; // Makes a virtual function call to Base::~Base()
+              // since it is virtual, it calls Derived::~Derived() which can
+              // release resources of the derived class, and then calls
+              // Base::~Base() following the usual order of destruction
+}
+===================
+During construction and destruction
+When a virtual function is called directly or indirectly from a constructor or from a destructor (including during the construction or destruction of the class’s non-static data members, e.g. in a member initializer list), and the object to which the call applies is the object under construction or destruction, the function called is the final overrider in the constructor’s or destructor’s class and not one overriding it in a more-derived class. In other words, during construction or destruction, the more-derived classes do not exist.
+
+When constructing a complex class with multiple branches, within a constructor that belongs to one branch, polymorphism is restricted to that class and its bases: if it obtains a pointer or reference to a base subobject outside this subhierarchy, and attempts to invoke a virtual function call (e.g. using explicit member access), the behavior is undefined:
+
+struct V {
+    virtual void f();
+    virtual void g();
+};
+ 
+struct A : virtual V {
+    virtual void f(); // A::f is the final overrider of V::f in A
+};
+struct B : virtual V {
+    virtual void g(); // B::g is the final overrider of V::g in B
+    B(V*, A*);
+};
+struct D : A, B {
+    virtual void f(); // D::f is the final overrider of V::f in D
+    virtual void g(); // D::g is the final overrider of V::g in D
+ 
+    // note: A is initialized before B
+    D() : B((A*)this, this) 
+    {
+    }
+};
+ 
+// the constructor of B, called from the constructor of D 
+B::B(V* v, A* a)
+{
+    f(); // virtual call to V::f (although D has the final overrider, D doesn't exist)
+    g(); // virtual call to B::g, which is the final overrider in B 
+ 
+    v->g(); // v's type V is base of B, virtual call calls B::g as before
+ 
+    a->f(); // a’s type A is not a base of B. it belongs to a different branch of the
+            // hierarchy. Attempting a virtual call through that branch causes
+            // undefined behavior even though A was already fully constructed in this
+            // case (it was constructed before B since it appears before B in the list
+            // of the bases of D). In practice, the virtual call to A::f will be
+            // attempted using B's virtual member function table, since that's what
+            // is active during B's construction)
+}
+===============================
+struct Abstract {
+    virtual void f() = 0; // pure virtual
+    virtual void g() {}; // non-pure virtual
+    ~Abstract() {
+        g(); // okay, calls Abstract::g()
+        // f(); // undefined behavior!
+        Abstract::f(); // okay, non-virtual call
+    }
+};
+ 
+//definition of the pure virtual function
+void Abstract::f() { std::cout << "A::f()\n"; }
+ 
+struct Concrete : Abstract {
+    void f() override {
+        Abstract::f(); // OK: calls pure virtual function
+    }
+    void g() override {}
+    ~Concrete() {
+        g(); // okay, calls Concrete::g()
+        f(); // okay, calls Concrete::f()
+    }
+};
+========================================
+In detail
+All members of a class (bodies of member functions, initializers of member objects, and the entire nested class definitions) have access to all the names to which a class can access. A local class within a member function has access to all the names the member function itself can access.
+
+A class defined with the keyword class has private access for its members and its base classes by default. A class defined with the keyword struct has public access for its members and its base classes by default. A union has public access for its members by default.
+
+To grant access to additional functions or classes to protected or private members, a friendship declaration may be used.
+
+Accessibility applies to all names with no regard to their origin, so a name introduced by a typedef or using declarations is checked, not the name it refers to.
+
+class A : X {
+  class B { }; // B is private in A
+public:
+  typedef B BB; // BB is public
+};
+void f() {
+  A::B y; // error, A::B is private
+  A::BB x; // OK, A::BB is public
+}
+=====================
+Member access does not affect visibility: names of private and privately-inherited members are visible and considered by overload resolution, implicit conversions to inaccessible base classes are still considered, etc. Member access check is the last step after any given language construct is interpreted. The intent of this rule is that replacing any private with public never alters the behavior of the program.
+
+Access checking for the names used in default function arguments as well as in the default template parameters is performed at the point of declaration, not at the point of use.
+
+Access rules for the names of virtual functions are checked at the call point using the type of the expression used to denote the object for which the member function is called. The access of the final overrider is ignored.
+
+struct B { virtual int f(); }; // f is public in B
+class D : public B { private: int f(); }; // f is private in D
+void f() {
+ D d;
+ B& b = d;
+ b.f(); // OK: B::f() is public, D::f() is invoked even though it's private
+ d.f(); // error: D::f() is private
+}
+=====================================
+A name that is private according to unqualified name lookup, may be accessible through qualified name lookup:
+
+class A { };
+class B : private A { };
+class C : public B {
+   A* p; // error: unqualified name lookup finds A as the private base of B
+   ::A* q; // OK, qualified name lookup finds the namespace-level declaration
+};
+========================
+A name that is accessible through multiple paths in the inheritance graph has the access of the path with the most access:
+
+class W { public: void f(); };
+class A : private virtual W { };
+class B : public virtual W { };
+class C : public A, public B {
+void f() { W::f(); } // OK, W is accessible to C through B
+};
+===========================
+When a member is redeclared within the same class, it must do so under the same member access:
+
+struct S {
+  class A; // S::A is public
+private:
+  class A {}; // error: cannot change access
+};
+=================
+Protected member access
+Protected members form the interface for the derived classes (which is distinct from the public interface of the class).
+
+A protected member of a class Base can only be accessed
+
+1) by the members and friends of Base
+2) by the members and friends (until C++17) of any class derived from Base, but only when operating on an object of a type that is derived from Base (including this)
+struct Base {
+ protected:
+    int i;
+ private:
+    void g(Base& b, struct Derived& d);
+};
+ 
+struct Derived : Base {
+    void f(Base& b, Derived& d) // member function of a derived class
+    {
+        ++d.i; // okay: the type of d is Derived
+        ++i; // okay: the type of the implied '*this' is Derived
+//      ++b.i; // error: can't access a protected member through Base
+    }
+};
+ 
+void Base::g(Base& b, Derived& d) // member function of Base
+{
+    ++i; // okay
+    ++b.i; // okay
+    ++d.i; // okay
+}
+ 
+void x(Base& b, Derived& d) // non-member non-friend
+{
+//    ++b.i; // error: no access from non-member
+//    ++d.i; // error: no access from non-member
+}
+When a pointer to a protected member is formed, it must use a derived class in its declaration:
+
+struct Base {
+ protected:
+    int i;
+};
+ 
+struct Derived : Base {
+    void f()
+    {
+//      int Base::* ptr = &Base::i;    // error: must name using Derived
+        int Base::* ptr = &Derived::i; // okay
+    }
+};
+===================================
+ Designates a function or several functions as friends of this class
+class Y {
+    int data; // private member
+    // the non-member function operator<< will have access to Y's private members
+    friend std::ostream& operator<<(std::ostream& out, const Y& o);
+    friend char* X::foo(int); // members of other classes can be friends too
+    friend X::X(char), X::~X(); // constructors and destructors can be friends
+};
+// friend declaration does not declare a member function
+// this operator<< still needs to be defined, as a non-member
+std::ostream& operator<<(std::ostream& out, const Y& y)
+{
+    return out << y.data; // can access private member Y::data
+}
+=============================
+Notes
+Friendship is not transitive (a friend of your friend is not your friend)
+
+Friendship is not inherited (your friend's children are not your friends)
+
+Prior to C++11, member declarations and definitions inside the nested class of the friend of class T cannot access the private and protected members of class T, but some compilers accept it even in pre-C++11 mode.
+
+Storage class specifiers are not allowed in friend function declarations. A function that is defined in the friend declaration has external linkage, a function that was previously defined, keeps the linkage it was defined with.
+
+Access specifiers have no effect on the meaning of friend declarations (they can appear in private: or in public: sections, with no difference)
+
+A friend class declaration cannot define a new class (friend class X {}; is an error)
+
+When a local class declares an unqualified function or class as a friend, only functions and classes in the innermost non-class scope are looked up, not the global functions:
+
+class F {};
+int f();
+int main()
+{
+    extern int g();
+    class Local { // Local class in the main() function
+        friend int f(); // Error, no such function declared in main()
+        friend int g(); // OK, there is a declaration for g in main()
+        friend class F; // friends a local F (defined later)
+        friend class ::F; // friends the global F
+    };
+    class F {}; // local F
+}
+A name first declared in a friend declaration within class or class template X becomes a member of the innermost enclosing namespace of X, but is not accessible for lookup (except argument-dependent lookup that considers X) unless a matching declaration at the namespace scope is provided - see namespaces for details.
+
+
+============================
+When a friend declaration refers to a full specialization of a function template, the keyword inline and default arguments cannot be used.
+
+template<class T> void f(int);
+template<> void f<int>(int);
+ 
+class X {
+    friend void f<int>(int x = 1); // error: default args not allowed
+};
+=========================
+When a friend declaration refers to a full specialization of a function template, the keyword inline and default arguments cannot be used.
+
+template<class T> void f(int);
+template<> void f<int>(int);
+ 
+class X {
+    friend void f<int>(int x = 1); // error: default args not allowed
+};
+====================
+If a member of a class template A is declared to be a friend of a non-template class B, the corresponding member of every specialization of A becomes a friend of B. If A is explicitly specialized, as long as there is a member of the same name, same kind (type, function, class template, function template), same parameters/signature, it will be a friend of B.
+
+template<typename T> // primary template
+struct A
+{
+    struct C {};
+    void f();
+    struct D {
+        void g();
+    };
+};
+ 
+template<> // full specialization
+struct A<int>
+{
+    struct C {};
+    int f();
+    struct D {
+        void g();
+    };
+};
+ 
+class B // non-template class
+{
+    template<class T>
+    friend struct A<T>::C; // A<int>::C is a friend, as well as all A<T>::C
+ 
+    template<class T>
+    friend void A<T>::f(); // A<int>::f() is not a friend, because the
+                           // signatures do not match, but A<char>::f() is
+ 
+    template<class T>
+    friend void A<T>::D::g(); // A<int>::D::g() is not a friend: it is not a member
+                              // of A, and A<int>::D is not a specialization of A<T>::D
+};
+=============================
+#include <iostream>
+ 
+template<typename T>
+class Foo; // forward declare to make function declaration possible
+ 
+template<typename T> // declaration
+std::ostream& operator<<(std::ostream&, const Foo<T>&);
+ 
+template<typename T>
+class Foo {
+ public:
+    Foo(const T& val) : data(val) {}
+ private:
+    T data;
+ 
+    // refers to a full specialization for this particular T 
+    friend std::ostream& operator<< <> (std::ostream&, const Foo&);
+    // note: this relies on template argument deduction in declarations
+    // can also specify the template argument with operator<< <T>"
+};
+ 
+// definition
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const Foo<T>& obj)
+{
+    return os << obj.data;
+}
+ 
+int main()
+{
+    Foo<double> obj(1.23);
+    std::cout << obj << '\n';
+}
+=================================
+#include <iostream>
+struct S {
+    // will usually occupy 2 bytes:
+    // 3 bits: value of b1
+    // 5 bits: unused
+    // 6 bits: value of b2
+    // 2 bits: value of b3
+    unsigned char b1 : 3;
+    unsigned char :0; // start a new byte
+    unsigned char b2 : 6;
+    unsigned char b3 : 2;
+};
+int main()
+{
+    std::cout << sizeof(S) << '\n'; // usually prints 2
+=============================
+If the specified size of the bit field is greater than the size of its type, the value is limited by the type: a std::uint8_t b : 1000; would still hold values between 0 and 255. the extra bits become unused padding.
+
+Because bit fields do not necessarily begin at the beginning of a byte, address of a bit field cannot be taken. Pointers and non-const references to bit fields are not possible. When initializing a const reference from a bit field, a temporary is created (its type is the type of the bit field), copy initialized with the value of the bit field, and the reference is bound to that temporary.
+
+The type of a bit field can only be integral or enumeration type.
+
+A bit field cannot be a static data member.
+
+There are no bit field prvalues: lvalue-to-rvalue conversion always produces an object of the underlying type of the bit field.
+
+Notes
+There are no default member initializers for bit fields: int b : 1 = 0; and int b : 1 {0} are ill-formed.
+
+The following properties of bit fields are implementation-defined
+
+The value that results from assigning or initializing a signed bit field with a value out of range, or from incrementing a signed bit field past its range.
+Everything about the actual allocation details of bit fields within the class object
+For example, on some platforms, bit fields don't straddle bytes, on others they do
+Also, on some platforms, bit fields are packed left-to-right, on others right-to-left
+===================================
+constructors
+===========
+struct A {
+    A() : v(42) { }  // Error
+    const int& v;
+};
+==================
+struct A {
+    A() : v(42) { }  // Error
+    const int& v;
+};
+=============================
+#include <iostream>
+ 
+struct A
+{
+    int i;
+ 
+    A ( int i ) : i ( i ) {}
+ 
+    ~A()
+    {
+        std::cout << "~a" << i << std::endl;
+    }
+};
+ 
+int main()
+{
+    A a1(1);
+    A* p;
+ 
+    { // nested scope
+        A a2(2);
+        p = new A(3);
+    } // a2 out of scope
+ 
+    delete p; // calls the destructor of a3
+}
+Output:
+
+~a2
+~a3
+~a1
+====================
