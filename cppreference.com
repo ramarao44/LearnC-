@@ -1214,4 +1214,300 @@ struct derived : base1, base2 { int d; };
 derived d1{ {1, 2}, { }, 4}; // d1.b1 = 1, d1.b2 = 2,  d1.b3 = 42, d1.d = 4
 derived d2{ {    }, { }, 4}; // d2.b1 = 0, d2.b2 = 42, d2.b3 = 42, d2.d = 4
 ======================
+reference initialization
+=========================
+#include <utility>
+#include <sstream>
+struct S {
+ int mi;
+ const std::pair<int,int>& mp; // reference member
+};
+ 
+void foo(int) {}
+ 
+struct A {};
+struct B : A {
+   int n;
+   operator int&() { return n; };
+};
+ 
+B bar() {return B(); }
+ 
+//int& bad_r; // error: no initializer
+extern int& ext_r; // OK
+ 
+int main()
+{
+ // lvalues
+    int n = 1;
+    int& r1 = n;  // lvalue reference to the object n
+    const int& cr(n); // reference can be more cv-qualified
+    volatile int& cv{n}; // any initializer syntax can be used
+    int& r2 = r1; // another lvalue reference to the object n
+//    int& bad = cr; // error: less cv-qualified
+    int& r3 = const_cast<int&>(cr); // const_cast is needed
+ 
+    void (&rf)(int) = foo; // lvalue reference to function
+    int ar[3];
+    int (&ra)[3] = ar; // lvalue reference to array
+ 
+    B b;
+    A& base_ref = b; // reference to base subobject
+    int& converted_ref = b; // reference to the result of a conversion
+ 
+// rvalues
+//  int& bad = 1; // error: cannot bind lvalue ref to rvalue
+    const int& cref = 1; // bound to rvalue
+    int&& rref = 1; // bound to rvalue
+ 
+    const A& cref2 = bar(); // reference to A subobject of B temporary
+    A&& rref2 = bar();      // same
+ 
+    int&& xref = static_cast<int&&>(n); // bind directly to n
+//  int&& copy_ref = n; // error: can't bind to an lvalue
+    double&& copy_ref = n; // bind to an rvalue temporary with value 1.0
+ 
+// restrictions on temporary lifetimes
+    std::ostream& buf_ref = std::ostringstream() << 'a'; // the ostringstream temporary
+                      // was bound to the left operand of operator<<, but its lifetime
+                      // ended at the semicolon: buf_ref is now a dangling reference.
+ 
+    S a { 1, {2,3} }; // temporary pair {2,3} bound to the reference member
+                      // a.mp and its lifetime is extended to match a
+                      // (Note: does not compile in C++17)
+    S* p = new S{ 1, {2,3} }; // temporary pair {2,3} bound to the reference
+                      // member p->mp, but its lifetime ended at the semicolon
+                      //  p->mp is a dangling reference
+    delete p;
+}
+=====================
+The names used in the default arguments are looked up, checked for accessibility, and bound at the point of declaration, but are executed at the point of the function call:
 
+int a = 1;
+int f(int);
+int g(int x = f(a)); // lookup for f finds ::f, lookup for a finds ::a
+                     // the value of ::a, which is 1 at this point, is not used
+void h()
+{
+  a = 2;  // changes the value of ::a
+  {
+     int a = 3;
+     g();       // calls f(2), then calls g() with the result
+  }
+}
+For a member function of a non-template class, the default arguments are allowed on the out-of-class definition, and are combined with the default arguments provided by the declaration inside the class body. If these out-of-class defaults would turn a member function into a default, copy, or move constructor the program is ill-formed. For member functions of class templates, all defaults must be provided in the initial declaration of the member function.
+
+class C {
+    void f(int i = 3);
+    void g(int i, int j = 99);
+    C(int arg); // non-default constructor
+};
+void C::f(int i = 3) {         // error: default argument already
+}                              // specified in class scope
+void C::g(int i = 88, int j) { // OK: in this translation unit,
+}                              // C::g can be called with no argument
+C::C(int arg = 1) {   // Error: turns this into a default constructor
+}
+The overriders of virtual functions do not acquire the default arguments from the base class declarations, and when the virtual function call is made, the default arguments are decided based on the static type of the object (note: this can be avoided with non-virtual interface pattern).
+
+struct Base {
+    virtual void f(int a = 7);
+};
+struct Derived : Base {
+    void f(int a) override;
+};
+void m() {
+    Derived d;
+    Base& b = d;
+    b.f(); // OK: calls Derived::f(7) 
+    d.f(); // Error: no default 
+}
+Local variables are not allowed in default arguments unless used in unevaluated context (since C++14):
+
+void f() 
+{
+    int n = 1;
+    extern void g(int x = n); // error: local variable cannot be a default
+    extern void h(int x = sizeof n); // OK as of CWG 2082
+}
+=========================
+The this pointer is not allowed in default arguments:
+
+class A {
+  void f(A* p = this) { } // error: this is not allowed
+};
+Non-static class members are not allowed in default arguments (even if they are not evaluated), except when used to form a pointer-to-member or in a member access expression.
+
+int b;
+class X {
+  int a;
+  int mem1(int i = a); // error: non-static member cannot be used
+  int mem2(int i = b); // OK: lookup finds X::b, the static member
+  static int b;
+};
+Function parameters are not allowed in default arguments (even if they are not evaluated) (until C++14)except if they are unevaluated (since C++14). Note that parameters that appear earlier in the parameter list are in scope:
+
+int a;
+int f(int a, int b = a); // Error: the parameter a used in a default argument
+int g(int a, int b = sizeof a); // Error until CWG 2082
+                                // OK after CWG 2082: use in unevaluated context is OK
+The default arguments are not part of the function type
+
+int f(int = 0);
+void h() {
+  int j = f(1);
+  int k = f();  // calls f(0);
+}
+int (*p1)(int) = &f;
+int (*p2)()    = &f; //Error: the type of f is int(int)
+=======================================
+Operator functions shall not have default arguments, except for the function call operator.
+
+class C {
+    int operator[](int i = 0); // ill-formed
+    int operator()(int x = 0); // ok
+};
+====================================
+forward declaration
+====================================
+struct s { int a; };
+struct s; // does nothing (s already defined in this scope)
+void g() {
+    struct s; // forward declaration of a new, local struct "s"
+              // this hides global struct s until the end of this block
+    s* p;     // pointer to local struct s
+    struct s { char* p; }; // definitions of the local struct s
+}
+=================================
+Union declaration
+  C++  C++ language  Classes 
+A union is a special class type that can hold only one of its non-static data members at a time.
+
+The class specifier for a union declaration is similar to class or struct declaration:
+
+union attr class-head-name { member-specification }		
+attr(C++11)	-	optional sequence of any number of attributes
+class-head-name	-	the name of the union that's being defined. Optionally prepended by nested-name-specifier (sequence of names and scope-resolution operators, ending with scope-resolution operator). The name may be omitted, in which case the union is unnamed
+member-specification	-	list of access specifiers, member object and member function declarations and definitions.
+A union can have member functions (including constructors and destructors), but not virtual functions.
+
+A union cannot have base classes and cannot be used as a base class.
+
+A union cannot have data members of reference types.
+====================================
+#include <iostream>
+ 
+// S has one non-static data member (tag), three enumerator members (CHAR, INT, DOUBLE), 
+// and three variant members (c, i, d)
+struct S
+{
+    enum{CHAR, INT, DOUBLE} tag;
+    union
+    {
+        char c;
+        int i;
+        double d;
+    };
+};
+ 
+void print_s(const S& s)
+{
+    switch(s.tag)
+    {
+        case S::CHAR: std::cout << s.c << '\n'; break;
+        case S::INT: std::cout << s.i << '\n'; break;
+        case S::DOUBLE: std::cout << s.d << '\n'; break;
+    }
+}
+ 
+int main()
+{
+    S s = {S::CHAR, 'a'};
+    print_s(s);
+    s.tag = S::INT;
+    s.i = 123;
+    print_s(s);
+}
+===========================
+data members
+===============================Non-static data members are declared in a member specification of a class.
+
+class S
+{
+    int n;                // non-static data member
+    int& r;               // non-static data member of reference type
+    int a[10] = {1, 2};   // non-static data member with initializer (C++11)
+    std::string s, *ps;   // two non-static data members
+    struct NestedS {
+        std::string s;
+    } d5, *d6;            // two non-static data members of nested type
+    char bit : 2;         // two-bit bitfield
+};
+Any simple declarations are allowed, except
+
+extern and register storage class specifiers are not allowed;
+thread_local storage class specifier is not allowed (but it is allowed for static data members);
+incomplete types are not allowed: in particular, a class C cannot have a non-static data member of type C, although it can have a non-static data member of type C& (reference to C) or C* (pointer to C);
+a non-static data member cannot have the same name as the name of the class if at least one user-declared constructor is present;
+the auto specifier cannot be used in a non-static data member declaration (although it is allowed for static data members that are initialized in the class definition).
+In addition, bit field declarations are allowed.
+===========================
+class default initializer
+=================================
+#include <iostream>
+ 
+int x = 0;
+struct S
+{
+    int n = ++x;
+    S() { }                 // uses default member initializer
+    S(int arg) : n(arg) { } // uses member initializer list
+};
+ 
+int main()
+{
+    std::cout << x << '\n'; // prints 0
+    S s1;
+    std::cout << x << '\n'; // prints 1 (default initializer ran)
+    S s2(7);
+    std::cout << x << '\n'; // prints 1 (default initializer did not run)
+}
+==========================================
+Default member initializers are not allowed for bit field members.
+
+Members of array type cannot deduce their size from member initializers:
+
+struct X {
+   int a[] = {1,2,3}; // error
+   int b[3] = {1,2,3}; // OK
+};
+=====================================
+Static member functions
+Static member functions are not associated with any object. When called, they have no this pointer.
+
+Static member functions cannot be virtual, const, or volatile.
+
+The address of a static member function may be stored in a regular pointer to function, 
+but not in a pointer to member function.
+====================================
+Static data members
+Static data members are not associated with any object. They exist even if no objects of the class have been defined. If the static member is declared thread_local(since C++11), there is one such object per thread. Otherwise, there is only one instance of the static data member in the entire program, with static storage duration.
+
+Static data members cannot be mutable.
+
+Static data members of a class in namespace scope have external linkage if the class itself has external linkage (i.e. is not a member of unnamed namespace). Local classes (classes defined inside functions) and unnamed classes, including member classes of unnamed classes, cannot have static data members.
+
+A static data member may be declared inline. An inline static data member can be defined in the class definition and may specify a default member initializer. It does not need an out-of-class definition:
+
+======================================
+Constant static members
+If a static data member of integral or enumeration type is declared const (and not volatile), it can be initialized with an initializer in which every expression is a constant expression, right inside the class definition:
+
+struct X
+{
+    const static int n = 1;
+    const static int m{2}; // since C++11
+    const static int k;
+};
+const int X::k = 3;
+=====================
