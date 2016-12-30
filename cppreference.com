@@ -2072,3 +2072,114 @@ Output:
 ~a3
 ~a1
 ====================
+Virtual destructors
+Deleting an object through pointer to base invokes undefined behavior unless the destructor in the base class is virtual:
+
+class Base {
+ public:
+    virtual ~Base() {}
+};
+class Derived : public Base {};
+Base* b = new Derived;
+delete b; // safe
+================================
+Deleted implicitly-declared copy constructor
+The implicitly-declared copy constructor for class T is undefined if any of the following conditions are true:	(until C++11)
+The implicitly-declared or defaulted copy constructor for class T is defined as deleted if any of the following conditions are true:	(since C++11)
+T has non-static data members that cannot be copied (have deleted, inaccessible, or ambiguous copy constructors);
+T has direct or virtual base class that cannot be copied (has deleted, inaccessible, or ambiguous copy constructors);
+T has direct or virtual base class with a deleted or inaccessible destructor;
+T has a user-defined move constructor or move assignment operator;
+T is a union and has a variant member with non-trivial copy constructor;
+T has a data member of rvalue reference type
+====================
+struct A
+{
+    A() { }         // converting constructor (since C++11)  
+    A(int) { }      // converting constructor
+    A(int, int) { } // converting constructor (since C++11)
+};
+ 
+struct B
+{
+    explicit B() { }
+    explicit B(int) { }
+    explicit B(int, int) { }
+};
+ 
+int main()
+{
+    A a1 = 1;      // OK: copy-initialization selects A::A(int)
+    A a2(2);       // OK: direct-initialization selects A::A(int)
+    A a3{4, 5};    // OK: direct-list-initialization selects A::A(int, int)
+    A a4 = {4, 5}; // OK: copy-list-initialization selects A::A(int, int)
+    A a5 = (A)1;   // OK: explicit cast performs static_cast, direct-initialization
+ 
+//  B b1 = 1;      // error: copy-initialization does not consider B::B(int)
+    B b2(2);       // OK: direct-initialization selects B::B(int)
+    B b3{4, 5};    // OK: direct-list-initialization selects B::B(int, int)
+//  B b4 = {4, 5}; // error: copy-list-initialization selected an explicit constructor
+                   //        B::B(int, int)
+    B b5 = (B)1;   // OK: explicit cast performs static_cast, direct-initialization
+    B b6;          // OK, default-initialization
+    B b7{};        // OK, direct-list-initialization
+//  B b8 = {};     // error: copy-list-initialization selected an explicit constructor
+                   //        B::B()
+}
+=======================================
+exceptions
+===================
+#include <iostream>
+#include <stdexcept>
+ 
+struct A {
+    int n;
+    A(int n = 0): n(n) { std::cout << "A(" << n << ") constructed successfully\n"; }
+    ~A() { std::cout << "A(" << n << ") destroyed\n"; }
+};
+ 
+int foo()
+{
+    throw std::runtime_error("error");
+}
+ 
+struct B {
+    A a1, a2, a3;
+    B() try : a1(1), a2(foo()), a3(3) {
+        std::cout << "B constructed successfully\n";
+    } catch(...) {
+    	std::cout << "B::B() exiting with exception\n";
+    }
+    ~B() { std::cout << "B destroyed\n"; }
+};
+ 
+struct C : A, B {
+    C() try {
+        std::cout << "C::C() completed successfully\n";
+    } catch(...) {
+        std::cout << "C::C() exiting with exception\n";
+    }
+    ~C() { std::cout << "C destroyed\n"; }
+};
+ 
+int main () try
+{
+    // creates the A base subobject
+    // creates the a1 member of B
+    // fails to create the a2 member of B
+    // unwinding destroys the a1 member of B
+    // unwinding destroys the A base subobject
+    C c;
+} catch (const std::exception& e) {
+    std::cout << "main() failed to create C with: " << e.what();
+}
+Output:
+
+A(0) constructed successfully
+A(1) constructed successfully
+A(1) destroyed
+B::B() exiting with exception
+A(0) destroyed
+C::C() exiting with exception
+main() failed to create C with: error
+===========================
