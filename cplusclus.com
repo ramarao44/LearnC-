@@ -53,3 +53,91 @@ Unique keys
 No two elements in the container can have equivalent keys.
 Allocator-aware
 The container uses an allocator object to dynamically handle its storage needs.
+=====
+queue
+=====
+template <class T, class Container = deque<T> > class queue;
+FIFO queue
+queues are a type of container adaptor, specifically designed to operate in a FIFO context (first-in first-out), where elements are inserted into one end of the container and extracted from the other.
+
+queues are implemented as containers adaptors, which are classes that use an encapsulated object of a specific container class as its underlying container, providing a specific set of member functions to access its elements. Elements are pushed into the "back" of the specific container and popped from its "front".
+
+The underlying container may be one of the standard container class template or some other specifically designed container class. This underlying container shall support at least the following operations:
+empty
+size
+front
+back
+push_back
+pop_front
+
+The standard container classes deque and list fulfill these requirements. By default, 
+if no container class is specified for a particular queue class instantiation, 
+the standard container deque is used.
+==================
+set
+=============
+Set
+Sets are containers that store unique elements following a specific order.
+
+In a set, the value of an element also identifies it (the value is itself the key, of type T), and each value must be unique. The value of the elements in a set cannot be modified once in the container (the elements are always const), but they can be inserted or removed from the container.
+
+Internally, the elements in a set are always sorted following a specific strict weak ordering criterion indicated by its internal comparison object (of type Compare).
+
+set containers are generally slower than unordered_set containers to access individual elements by their key, but they allow the direct iteration on subsets based on their order.
+
+Sets are typically implemented as binary search trees.
+
+==========
+multiset
+==========
+Multiple-key set
+Multisets are containers that store elements following a specific order, and where multiple elements can have equivalent values.
+
+In a multiset, the value of an element also identifies it (the value is itself the key, of type T). The value of the elements in a multiset cannot be modified once in the container (the elements are always const), but they can be inserted or removed from the container.
+
+Internally, the elements in a multiset are always sorted following a specific strict weak ordering criterion indicated by its internal comparison object (of type Compare).
+
+multiset containers are generally slower than unordered_multiset containers to access individual elements by their key, but they allow the direct iteration on subsets based on their order.
+
+Multisets are typically implemented as binary search trees.
+====================
+vector
+==========
+Vector
+Vectors are sequence containers representing arrays that can change in size.
+
+Just like arrays, vectors use contiguous storage locations for their elements, which means that their elements can also be accessed using offsets on regular pointers to its elements, and just as efficiently as in arrays. But unlike arrays, their size can change dynamically, with their storage being handled automatically by the container.
+
+Internally, vectors use a dynamically allocated array to store their elements. This array may need to be reallocated in order to grow in size when new elements are inserted, which implies allocating a new array and moving all elements to it. This is a relatively expensive task in terms of processing time, and thus, vectors do not reallocate each time an element is added to the container.
+
+Instead, vector containers may allocate some extra storage to accommodate for possible growth, and thus the container may have an actual capacity greater than the storage strictly needed to contain its elements (i.e., its size). Libraries can implement different strategies for growth to balance between memory usage and reallocations, but in any case, reallocations should only happen at logarithmically growing intervals of size so that the insertion of individual elements at the end of the vector can be provided with amortized constant time complexity (see push_back).
+
+Therefore, compared to arrays, vectors consume more memory in exchange for the ability to manage storage and grow dynamically in an efficient way.
+
+Compared to the other dynamic sequence containers (deques, lists and forward_lists), 
+vectors are very efficient accessing its elements (just like arrays) and relatively efficient adding or removing elements from its end. For operations that involve inserting or removing elements at positions other than the end, they perform worse than the others, and have less consistent iterators and references than lists and forward_lists.
+=================
+iterator
+========
+Iterators are classified into five categories depending on the functionality they implement:
+
+Input
+Output
+Forward
+Bidirectional
+Random Access
+
+Input and output iterators are the most limited types of iterators: they can perform sequential single-
+pass input or output operations.
+
+Forward iterators have all the functionality of input iterators and -if they are not constant iterators- 
+also the functionality of output iterators,
+although they are limited to one direction in which to iterate through a range (forward).
+All standard containers support at least forward iterator types.
+
+Bidirectional iterators are like forward iterators but can also be iterated through backwards.
+
+Random-access iterators implement all the functionality of bidirectional iterators, and also have the ability to 
+access ranges non-sequentially: distant elements can be accessed directly by applying an offset value to an iterator 
+without iterating through all the elements in between. These iterators have a similar functionality to standard pointers 
+(pointers are iterators of this category).
