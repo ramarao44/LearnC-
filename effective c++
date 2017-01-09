@@ -1,0 +1,69 @@
+Given that malloc and free are ignorant of constructors and destructors and that mixing malloc/free with
+new/delete can be more volatile than a fraternity rush party, you're best off sticking to an exclusive diet of news
+and deletes whenever you can.
+
+Given the availability of consts and inlines, your need for the preprocessor is reduced, but it's not completely
+eliminated. The day is far from near when you can abandon #include, and #ifdef/#ifndef continue to play
+important roles in controlling compilation. It's not yet time to retire the preprocessor, but you should definitely
+plan to start giving it longer and more frequent vacations
+
+t's often convenient to define class-specific constants, and that calls for a slightly different tack. To
+limit the scope of a constant to a class, you must make it a member, and to ensure there's at most one copy of the
+constant, you must make it a static member:
+
+This Item might better be called "prefer the compiler to the preprocessor," because #define is often treated as if
+it's not part of the language per se. That's one of its problems. When you do something like this,
+#define ASPECT_RATIO 1.653
+the symbolic name ASPECT_RATIO may never be seen by compilers; it may be removed by the preprocessor
+before the source code ever gets to a compiler. As a result, the name ASPECT_RATIO may not get entered into
+the symbol table. This can be confusing if you get an error during compilation involving the use of the constant,
+because the error message may refer to 1.653, not ASPECT_RATIO. If ASPECT_RATIO was defined in a
+header file you didn't write, you'd then have no idea where that 1.653 came from, and you'd probably waste time
+tracking it down. This problem can also crop up in a symbolic debugger, because, again, the name you're
+programming with may not be in the symbol table.
+
+This is a particularly important rule to bear in mind when you are writing a class containing a pointer data
+member and also offering multiple constructors, because then you've got to be careful to use the same form of
+new in all the constructors to initialize the pointer member. If you don't, how will you know what form of delete
+to use in your destructor? For a further examination of this issue, s
+
+Finally, X's operator new will do the following:
+1. Call the standard set_new_handler with X's error-handling function. This will install X's new-handler asthe global new- handler. In the code below, notice how you explicitly reference the std scope (where the
+standard set_new_handler resides) by using the "::" notation.
+2. Call the global operator new to actually allocate the requested memory. If the initial attempt at allocation
+fails, the global operator new will invoke X's new-handler, because that function was just installed as the
+global new-handler. If the global operator new is ultimately unable to find a way to allocate the requested
+memory, it will throw a std::bad_alloc exception, which X's operator new will catch. X's operator new
+will then restore the global new-handler that was originally in place, and it will return by propagating the
+exception.
+3. Assuming the global operator new was able to successfully allocate enough memory for an object of type
+X, X's operator new will again call the standard set_new_handler to restore the global error-handling
+function to what it was originally. It will then return a pointer to the allocated memory
+
+When operator new cannot satisfy a request for memory, it calls the new-handler function not once, but
+repeatedly until it can find enough memory. The code giving rise to these repeated calls is shown in Item 8, but
+this high-level description is enough to conclude that a well-designed new-handler function must do one of the
+following:
+ Make more memory available. This may allow operator new's next attempt to allocate the memory to
+succeed. One way to implement this strategy is to allocate a large block of memory at program start-up,
+then release it the first time the new-handler is invoked. Such a release is often accompanied by some kind
+of warning to the user that memory is low and that future requests may fail unless more memory is
+somehow made available.
+ Install a different new-handler. If the current new-handler can't make any more memory available,
+perhaps it knows of a different new-handler that is more resourceful. If so, the current new-handler can
+install the other new-handler in its place (by calling set_new_handler). The next time operator new calls
+the new-handler function, it will get the one most recently installed. (A variation on this theme is for a
+new-handler to modify its own behavior, so the next time it's invoked, it does something different. One
+way to achieve this is to have the new-handler modify static or global data that affects the new-handler's
+behavior.)
+ Deinstall the new-handler, i.e., pass the null pointer to set_new_handler. With no new-handler installed,
+operator new will throw an exception of type std::bad_alloc when its attempt to allocate memory is
+unsuccessful.
+ Throw an exception of type std::bad_alloc or some type derived from std::bad_alloc. Such exceptions
+will not be caught by operator new, so they will propagate to the site originating the request for memory.
+(Throwing an exception of a different type will violate operator new's exception specification. The default
+action when that happens is to call abort, so if your new-handler is going to throw an exception, you
+definitely want to make sure it's from the std::bad_alloc hierarchy. For more information on exception
+specifications, see Item M14.)
+ Not return , typically by calling abort or exit, both of which are found in the standard C library (and thus
+in the standard C++ library ? see Item 49).
