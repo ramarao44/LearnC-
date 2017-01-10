@@ -1,0 +1,32 @@
+======================
+sizeof the class varies depends on the type of members such as enums,static
+======================
+#include<iostream>
+using namespace std;
+
+class classsize{
+enum {num=6,num2,num3,num4};// enums are const's so they are not given any size as they do not have address
+static const int a=8; // static variable are not part of any class object they are common for all class objects so the size of the 
+                      //object will not include the size of static variables
+};
+int main()
+{
+    classsize a;
+    cout<<sizeof(a);
+}
+
+output 1
+=============
+
+class classsize{
+enum {num=6,num2,num3,num4};// enums are const's so they are not given any size as they do not have address
+const int a=8; 
+};
+int main()
+{
+    classsize a;
+    cout<<sizeof(a);
+}
+
+output 4
+=============
