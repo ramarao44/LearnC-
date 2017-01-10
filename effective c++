@@ -99,3 +99,48 @@ aside storage for const objects of integral types (unless you create a
 pointer or reference to the object), sloppy compilers may, and you may
 not be willing to set aside memory for such objects. Like #define s,
 enums never result in that kind of unnecessary memory allocation.
+
+=========
+constness
+=========
+
+Let’s take a brief time-out for philosophy. What does it mean for a
+member function to be const ? There are two prevailing notions: bitwise
+constness (also known as physical constness) and logical constness.
+The bitwise const camp believes that a member function is const if and
+only if it doesn’t modify any of the object’s data members (excluding
+those that are static), i.e., if it doesn’t modify any of the bits inside the
+object. The nice thing about bitwise constness is that it’s easy to
+detect violations: compilers just look for assignments to data mem-
+bers. In fact, bitwise constness is C++’s definition of constness, and a
+const member function isn’t allowed to modify any of the non-static
+data members of the object on which it is invoked.
+=============
+intialization order
+===============
+One aspect of C++ that isn’t fickle is the order in which an object’s
+data is initialized. This order is always the same: base classes are ini-
+tialized before derived classes (see also Item 12), and within a class,
+data members are initialized in the order in which they are declared.
+This is true
+even if they are listed in a different order on the member initialization
+list (something that’s unfortunately legal)
+
+the relative order of initialization of non-local static
+objects defined in different translation units is undefined. There is a
+reason for this. Determining the “proper” order in which to initialize
+non-local static objects is hard. Very hard. Unsolvably hard. In its
+most general form — with multiple translation units and non-local
+static objects generated through implicit template instantiations
+(which may themselves arise via implicit template instantiations)
+======
+item 4
+=======
+Things to Remember
+✦ Manually initialize objects of built-in type, because C++ only some-
+times initializes them itself.
+✦ In a constructor, prefer use of the member initialization list to as-
+signment inside the body of the constructor. List data members in
+the initialization list in the same order they’re declared in the class.
+✦ Avoid initialization order problems across translation units by re-
+placing non-local static objects with local static objects.
