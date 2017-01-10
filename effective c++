@@ -67,3 +67,35 @@ definitely want to make sure it's from the std::bad_alloc hierarchy. For more in
 specifications, see Item M14.)
  Not return , typically by calling abort or exit, both of which are found in the standard C library (and thus
 in the standard C++ library ? see Item 49).
+
+One of the things many people don't realize about operator new is that it's inherited by subclasses. That can lead
+to some interesting complications
+
+Note, by the way, that there’s no way to create a class-specific con-
+stant using a #define , because #define s don’t respect scope. Once a
+macro is defined, it’s in force for the rest of the compilation (unless it’s
+#undef ed somewhere along the line). Which means that not only can’t
+#define s be used for class-specific constants, they also can’t be used to
+provide any kind of encapsulation, i.e., there is no such thing as a
+“private” #define . Of course, const data members can be encapsulated;
+NumTurns is
+The only exception is when
+you need the value of a class constant during compilation of the class,
+such as in the declaration of the array GamePlayer::scores above (where
+compilers insist on knowing the size of the array during compilation).
+===============
+enum hack
+=========
+The enum hack is worth knowing about for several reasons. First, the
+enum hack behaves in some ways more like a #define than a const
+does, and sometimes that’s what you want. For example, it’s legal to
+take the address of a const , but it’s not legal to take the address of an
+enum, and it’s typically not legal to take the address of a #define ,
+either. If you don’t want to let people get a pointer or reference to one
+of your integral constants, an enum is a good way to enforce that con-
+straint. (For more on enforcing design constraints through coding
+decisions, consult Item 18.) Also, though good compilers won’t set
+aside storage for const objects of integral types (unless you create a
+pointer or reference to the object), sloppy compilers may, and you may
+not be willing to set aside memory for such objects. Like #define s,
+enums never result in that kind of unnecessary memory allocation.
