@@ -245,4 +245,28 @@ B * b = reinterpret_cast<B*>(a);
 
 This code compiles, although it does not make much sense, since now b points to an object of a totally unrelated and 
 likely incompatible class. Dereferencing b is unsafe.
+======================
+Multithreading
+===============
+class thread;
+Thread
+Class to represent individual threads of execution.
 
+A thread of execution is a sequence of instructions that can be executed concurrently with other such sequences in multithreading environments, while sharing a same address space.
+
+An initialized thread object represents an active thread of execution; Such a thread object is joinable, and has a unique thread id.
+
+A default-constructed (non-initialized) thread object is not joinable, and its thread id is common for all non-joinable threads.
+
+A joinable thread becomes not joinable if moved from, or if either join or detach are called on them.
+=================
+thread id
+=========
+hread id
+Values of this type are returned by thread::get_id and this_thread::get_id to identify threads.
+
+The value of a default-constructed thread::id object identifies non-joinable threads, and thus compares equal to the value returned by member thread::get_id of any such threads.
+
+For joinable threads, thread::get_id returns a unique value of this type that does not compare equal the one returned for any other joinable or non-joinable thread.
+
+Note that certain library implementations may reutilize the thread::id value of a terminated thread that can no longer be joined
