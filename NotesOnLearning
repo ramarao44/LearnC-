@@ -1,5 +1,60 @@
 Cpp important points come across in learning
 =============================================
+C++completeReference
+=====================
+
+Friend Function
+==============
+1. First,friends can be useful when you are overloading certain types of operators (seeChapter14).
+Second,friendfunctionsmakethecreationofsometypesofI/O functionseasier(seeChapter18).Thethirdreasonthatfriendfunctionsmaybedesirable 
+isthatinsomecases,twoormoreclassesmaycontainmembersthatareinterrelated relativetootherpartsofyourprogram
+
+
+static data member
+===================
+One use of a static member variable is to provide access control to some shared resource used by all objects of a class. 
+For example, you might create several objects, each of which needs to write to a specific disk file. Clearly, 
+however, only one object can be allowed to write to the file at a time. In this case, you will want to declare a static 
+variable that indicates when the file is in use and when it is free. Each object then interrogates this variable before 
+writing to the file. The following program shows how you might use a static variable of this type to control access to a 
+scarce resource:
+
+As you can see, the static member variable count is incremented whenever an object is created and decremented when an 
+object is destroyed. This way, it keeps track of how many objects of type Counter are currently in existence. 
+By using static member variables, you should be able to virtually eliminate any need for global variables. 
+The trouble with global variables relative to OOP is that they almost always violate the principle of encapsulation. 
+
+static member functions
+=======================
+They may only directly refer to other static members of the class. (Of course, global functions and data may be accessed by
+static member functions.) A static member function does not have a this pointer. (See Chapter 13 for information on this.) 
+There cannot be a static and a non-static version of the same function. 
+A static member function may not be virtual. Finally, they cannot be declared as const or volatile. 
+
+
+constructors
+=============
+Global objects have their constructor functions execute before main() begins execution. Global constructors 
+are executed in order of their declaration, within the same file. You cannot know the order of execution of global 
+constructors spread among several files. 
+Global destructors execute in reverse order after main() has terminated
+
+
+ When you pass an object to a function, you want the current state of that object. If the constructor is 
+ called when the copy is created, initialization will occur, possibly changing the object. Thus, the constructor function 
+ cannot be executed when the copy of an object is generated in a function call. Although the constructor function is 
+ not called when an object is passed to a function, it is necessary to call the destructor when the copy is destroyed. 
+ (The copy is destroyed like any other local variable, when the function terminates.) 
+ Remember, a new copy of the object has been created when the copy is made.
+
+
+
+
+
+
+
+
+
 1. Alaways use assert to check index passed as a parameter to function of an array before using the array.
 2. Subscript operator should return & reference to the value of an array why because the assignemnt operator requires
   an l value that means a memory to assign the the value. for example int arr[2]=5; writing into an array at index 2 so we
