@@ -47,12 +47,32 @@ Global destructors execute in reverse order after main() has terminated
  (The copy is destroyed like any other local variable, when the function terminates.) 
  Remember, a new copy of the object has been created when the copy is made.
 
+reference
+=========
+C++ contains a feature that is related to the pointer called a reference. A reference is
+essentially an implicit pointer. There are three ways that a reference can be used: as a
+function parameter, as a function return value, or as a stand-alone reference. Each is
+examined here
+
+Restrictions to References
+There are a number of restrictions that apply to references. You cannot reference
+another reference. Put differently, you cannot obtain the address of a reference. You
+cannot create arrays of references. You cannot create a pointer to a reference. You
+cannot reference a bit-field.
+A reference variable must be initialized when it is declared unless it is a member of
+a class, a function parameter, or a return value. Null references are prohibited
 
 
-
-
-
-
+Although new and delete perform functions similar to malloc() and free(), they
+have several advantages. First, new automatically allocates enough memory to hold an
+object of the specified type. You do not need to use the sizeof operator. Because the size
+is computed automatically, it eliminates any possibility for error in this regard. Second,
+new automatically returns a pointer of the specified type. You don't need to use an
+explicit type cast as you do when allocating memory by using malloc(). Finally, both
+new and delete can be overloaded, allowing you to create customized allocation systems.
+Although there is no formal rule that states this, it is best not to mix new and delete
+with malloc() and free() in the same program. There is no guarantee that they are
+mutually compatible.
 
 
 1. Alaways use assert to check index passed as a parameter to function of an array before using the array.
