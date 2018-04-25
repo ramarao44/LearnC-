@@ -3,6 +3,7 @@ Cpp important points come across in learning
 C++completeReference
 =====================
 
+
 Friend Function
 ==============
 1. First,friends can be useful when you are overloading certain types of operators (seeChapter14).
@@ -12,6 +13,7 @@ isthatinsomecases,twoormoreclassesmaycontainmembersthatareinterrelated relativet
 
 static data member
 ===================
+
 One use of a static member variable is to provide access control to some shared resource used by all objects of a class. 
 For example, you might create several objects, each of which needs to write to a specific disk file. Clearly, 
 however, only one object can be allowed to write to the file at a time. In this case, you will want to declare a static 
@@ -21,6 +23,7 @@ scarce resource:
 
 As you can see, the static member variable count is incremented whenever an object is created and decremented when an 
 object is destroyed. This way, it keeps track of how many objects of type Counter are currently in existence. 
+
 By using static member variables, you should be able to virtually eliminate any need for global variables. 
 The trouble with global variables relative to OOP is that they almost always violate the principle of encapsulation. 
 
@@ -40,8 +43,7 @@ constructors spread among several files.
 Global destructors execute in reverse order after main() has terminated
 
 
- When you pass an object to a function, you want the current state of that object. If the constructor is 
- called when the copy is created, initialization will occur, possibly changing the object. Thus, the constructor function 
+ When you pass an object to a function, you want the current state of that object. If the constructor is  called when the copy is created, initialization will occur, possibly changing the object. Thus, the constructor function 
  cannot be executed when the copy of an object is generated in a function call. Although the constructor function is 
  not called when an object is passed to a function, it is necessary to call the destructor when the copy is destroyed. 
  (The copy is destroyed like any other local variable, when the function terminates.) 
@@ -74,8 +76,13 @@ Although there is no formal rule that states this, it is best not to mix new and
 with malloc() and free() in the same program. There is no guarantee that they are
 mutually compatible.
 
+function overloading
+=====================
+Function overloading is one of the defining aspects of the C++ programming language. Not only does it provide support for compile-time polymorphism, it also adds flexibility and convenience. Some of the most commonly overloaded functions are constructors. Perhaps the most important form of an overloaded constructor is the copy constructor. Closely related to function overloading are default arguments. Default arguments can sometimes provide an alternative to function overloading.
 
-1. Alaways use assert to check index passed as a parameter to function of an array before using the array.
+
+
+1. Alaways use assert to check index passed as a parameter to function of an array before using the array
 2. Subscript operator should return & reference to the value of an array why because the assignemnt operator requires
   an l value that means a memory to assign the the value. for example int arr[2]=5; writing into an array at index 2 so we
   need the address. It won't work if it is like this, if subscript operator returns value  for example arr[2]'s value is 3
