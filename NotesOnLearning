@@ -118,6 +118,9 @@ flexibility. Unlike early binding, late binding allows you to create programs th
 executes without having to create a large amount of "contingency code." Keep in mind that because a function call is not resolved 
 until run time, late binding can make for somewhat slower execution times.
 
+Vtable explained article
+========================
+https://www.go4expert.com/articles/virtual-table-vptr-t16544/
 
 
 1. Alaways use assert to check index passed as a parameter to function of an array before using the array
