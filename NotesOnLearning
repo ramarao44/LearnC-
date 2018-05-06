@@ -102,6 +102,12 @@ which defines the interface and all elements common to all classes derived from 
 to the derived class. By creating class libraries, you are able to create and control the interface of a general class while
 still letting other programmers adapt it to their specific needs. 
 
+function hiding
+================
+In general, we can say that anytime you redefine an overloaded function name from the base class, all the other versions are
+automatically hidden in the new class. 
+
+
 
 Early vs. Late Binding Before concluding this chapter on virtual functions and run-time polymorphism, 
 there are two terms that need to be defined because they are used frequently in discussions of C++ and object-oriented programming: 
