@@ -124,6 +124,39 @@ flexibility. Unlike early binding, late binding allows you to create programs th
 executes without having to create a large amount of "contingency code." Keep in mind that because a function call is not resolved 
 until run time, late binding can make for somewhat slower execution times.
 
+static and dynamic cast
+=====================
+
+A static_cast and dynamic_cast both performs conversion between pointers to related classes. The difference between static_cast and dynamic_cast is that, static_cast performs a cast statically at compile time. It performs no run-time checks and hence no runtime overhead. 
+For example, 
+int a = 10; 
+float n = static_cast<float>(a); //it behaves as 'a' was a float at compile time.
+
+Where, dynamic_cast performs a cast 'dynamically' at runtime. It is used for handling polymorphism. Dynamic_cast makes sure that the result of the type conversion is valid and complete object of the requested class.
+For example,
+
+class Base{ };
+class Derived : public Base { };
+
+Base b, *ptrb;
+Derived d, *ptrd;
+
+ptrb = dynamic_cast*<Base *>(&d); //Works fine
+ptrd = dynamic_Cast<<Derived *>(&b); //Fail
+
+In the above example, first dynamic_cast statement will work appropriately because casting is done from derived class to base class and second dynamic_cast statement will give compilation error because base class to derived class class conversion is not allowed with dynamic_cast unless the base class is polymorphic. A polymorphic type has at least one virtual function which is declared or inherited.
+For example,
+class Base{virtual void dummy()}; //polymorphic class
+
+Dynamic_cast have a significant runtime overhead.
+
+
+
+Both static_cast and dynamic_cast can perform conversions between pointers to related classes. Only the difference between them is 
+that the static_cast performs the conversion between pointers of the non-polymorphic related classes and dynamic_cast performs the 
+conversion of the polymorphic related classes. 
+
+
 Vtable explained article
 ========================
 https://www.go4expert.com/articles/virtual-table-vptr-t16544/
