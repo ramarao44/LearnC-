@@ -1,0 +1,10 @@
+1. git add files // all files into local branch
+2. git commit -m " local commit to create a patch "
+3. git log  // copy the latest commit id above the commit message given in step 2
+4. git show commitid >localchanges.patch  // same id copied in step 3, all the diff is copied into localchanges.patch files
+5. copy the patch file into branch where you want to commit these changes
+6. git apply --stat localchanges.patch // gives the additions(+), and delections(-) information
+7. git apply --check localchanges.patch  //verifies the file if any errors
+8. git am --signoff < localchanges.patch // adds all changes from the old branch to new branch
+9. git commit -m " commiting to new branch" //
+10. git push // pushes changes from patch file into this remote branch
