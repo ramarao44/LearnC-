@@ -1,0 +1,50 @@
+Useful Baic git commands
+======================================
+1. git clone // well known
+2. git submodule update // well known
+
+Now we have modified files, based on the tickets that we are working on
+After we make sure all of our changes are working as expected.
+For example, compiled successfully, flashed and tested on the borad.
+
+Now the time starts to commit the changes on to local branch
+
+3. git status //it tells what files you have modified. means modified existing files, or added new files, deleted existing files
+4. git diff   // it shows you what is changed inside of each file 
+if you want you can redirect the differences into a text file also
+5. git diff >diff.txt
+6. git diff >diff.patch // it creates patch file which can be used to apply patch on different branch
+
+Then the next step is to add the files into your local git repository 
+
+6. git add file name // it adds the file into local git repo you can all files at time with " git add ."  but be careful whether there are any unwanted files or folders present in directory
+
+you can verify what files are added with git status command. added files will be in green only these files will be commited with commit command in next step
+
+7. git status 
+
+8. git commit -m "ticket id + useful comment"
+
+Now we have successfully commited the local changes into local branch. we can verify it with below command whether the commit is reflecting or not
+
+9. git  log // the top most recent log should be your commit.
+
+The next is the last step that pushes the changes into remote branch on the server
+
+10. git push
+
+To verify whether the push is successfull or not, you can check in bitbucket for the same branch.
+
+
+create a patch from a commit and apply it on a different branch
+===============================================================
+1. git add files // all files into local branch
+2. git commit -m " local commit to create a patch "
+3. git log  // copy the latest commit id above the commit message given in step 2
+4. git show commitid >localchanges.patch  // same id copied in step 3, all the diff is copied into localchanges.patch files
+5. copy the patch file into branch where you want to commit these changes
+6. git apply --stat localchanges.patch // gives the additions(+), and delections(-) information
+7. git apply --check localchanges.patch  //verifies the file if any errors
+8. git am --signoff < localchanges.patch // adds all changes from the old branch to new branch
+9. git commit -m " commiting to new branch" //
+10. git push // pushes changes from patch file into this remote branch
