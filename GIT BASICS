@@ -1,0 +1,199 @@
+                                              
+
+What is git?
+
+
+Git is distributed revision control and source code management system. For us, it means that there is something which is distributed to many.
+Here we have to understand the exact meaning of distribution which helps us grasping how git system works.
+
+In our Software Engineering, we many engineers work on single project. So the Source code of the project is maintained in a remote server.
+That is called the central repository. Because we all can't work on the single repository at a time. The central repository is distributed/shared to each
+and every engineer. Which means exact copy of the source code from the remote server is copied to local computers of engineers.
+
+Hmm,we have now our code with us to start work with it. Let's Read the below content to understand how to work with local git repository and central repository.
+
+Above image conveys the same concept just have a look now.
+
+I hope that you have understood that we have two git repositories to work with.
+
+
+1. Central Repository
+2. Local Repository
+
+Q1) How to get the code from central repository?
+
+
+    As part of project tools installation, Hope you have installed git bash,setup ssh key and have access to your repositories.
+    
+    C1) git clone --recursive <ssh path> (example ssh://git@sourcecode.socialcoding.bosch.com:7999/g3n/cpj_byton_svc3.git)
+    
+    This command downloads the source code from remote server to your local machine.
+    if your project has submodules, git submodules will be downloaded with below command.
+    
+    C2) git submodule update --init --recursive -f
+
+
+   C3) git status
+
+        Using this command helps you to confirm, you have clean branch. Make sure there are no modifications in your local branch.
+    
+    Result: You have the local repo in your PC.
+    
+Q2) Shall I start working on my local copy of remote branch immediately after it is downloaded?
+
+
+    No, why the reason is that this is main branch which is develop. We are not supposed to work on this develop branch.
+    we are supposed to work only on feature branch. That means for each feature development we have to create one branch out of develop.
+    if you have not created feature branch,create one from T&R. If it is already created by your integrator or your colleage ask for the branch name.
+    
+
+    C4) git fetch              (this command helps in downloading latest branches information which are created after your clone command)
+
+      
+    C5) git checkout <branch name>
+    
+    Your are set to start work on it.
+    Do what ever you are supposed to do in your local branch.
+    
+Q3) I am ready with my changes, how to commit the changes?
+
+
+    Hope, your local repository is building successfully without any build errors and you have flashed binary on hardware and performed necessary testing.
+    
+    C6) git status
+    
+    This command lists out all the files that you have modified in your local repo with red colour.
+    sometimes you will have both tracked files and un-tracked files in your local repo.
+    tracked files means the files that part of your remote central repo.
+    un-tracked files means the files that are newly added by you or generated as part of your build.
+    here you have to selectively add files which are necessary to commit.
+    
+    C7) git add <file name> ,  or   git add .  (if you have to commit all the files shown in git status, you can use this git add . command to add all the files at once but be cautious to use it)
+    C8) git status
+    
+    git status now shows all the added files in green color.
+    please verify that you have added only the relevant files
+    
+    C9) git commit -m  <T&R Branch name, and  additional info for clarity of what is implemented>
+
+
+    -m means commit message to give an overview of what changes are committed
+
+    we can install the git hooks to avoid mentioning the git messages while committing.Howto - Setup git-tools hooks
+    
+    so far all the commands which are explained above executed on your local branch and that you have committed your changes locally.
+    
+    C10) git log
+    
+    if your commit is successful you can see your commit message on the top of the log.
+    
+    Now it is time to push your local changes to remote feature branch which you have created as part of your feature implementation.
+
+    
+    in case many are working on the same branch, you have to update your local branch before pushing to remote branch.
+    
+    C11) git fetch
+    
+     this command updates your local git repository head information with remote head information. which means you can see now if any commits have been done in between.
+    
+    C12) git pull
+    
+    this command pulls all the code changes from the remote branch to your local branch.
+    sometimes you might see merge conflicts if your local repo has files changed that are already committed by someone from your team.
+    you have to manually resolve the conflicts by sitting with your colleague who has the done commit before you.
+    To avoid this always update your feature branch with C11 and C12 commands
+    
+    C13) git push
+    
+
+
+    Hopefully, Now this command should push your local changes into remote feature branch in the server.
+
+   Now it is the time to create a pull request from your T&R.
+    
+    After the review process ,the integrator or by you this can be merged to develop branch.
+
+
+Q4) How can I take backup of my only changes, instead of copying files, or copying the entire repo in case of lot many changes?
+
+
+         Yes, you can take backup of all your changes alone as a patch files.
+
+     C14) git diff
+
+       This will show you all the changes that you have done in your local repo. By using redirection operator you can save the "git diff" into a file.
+
+    C15) git diff >>mychanges.patch
+
+      Now, the mychanges.patch file contains all of your changes.
+
+Indeed, This is very helpful for developers to save lot time and effort in backing up changes manually. And the manual backup is also not a good practice while working with git.
+
+suppose, you are set to start working on big feature implementation. While developing the code, you obviously work on different sub task. After successfully developing
+
+each sub task, you usually verify by flashing on a hardware.
+
+Hmm, Now it is time to think about it taking a backup of this sub task code and start developing for the next sub task.
+
+Using git diff command, it is just a second to take back up.  This how you can take sequential backups of your code as and when you are working on huge development task.
+
+
+Q5)  I have committed my changes on branch1 now I want to move all of my changes onto branch2,How?
+
+
+  Don't worry,  this is very easy using git compared to traditional approach of using beyond compare and copy all the files from one branch to other.
+
+ We have two methods to achieve this task.
+
+Method 1) patch method
+
+ C16) git log  ( this will show your commit message, on top of your message you can see commit id just copy it and save somewhere else)
+
+C17) git show "commitid" >>MyCommitonBranch1.patch
+
+now you are on branch1, Next you have to change your local branch from branch1 to branch2 on which you intended to commit.
+
+C18)  git checkout branch2
+
+Hopefully, now your branch head is pointing to branch2
+
+C19) git branch
+
+this command will tell you on which branch your local repository is on with * identifier.
+
+C20) git apply --stat MyCommitonBranch1.patch
+
+this command will help you to see number additions (plus) and deletions (minus) done by you.
+
+C21)  git apply --check MyCommitonBranch1.patch
+
+this command will verify whether the patch file has any errors.
+
+C22) git am --signoff < MyCommitonBranch1.patch
+
+Finally, this command adds all the changes you have done in branch1 to branch2
+
+C23) git status
+
+Now, git status will show you all the files change in green that means those files are added also by git am command.
+
+So now you just have to execute the commit command with proper commit message.
+
+C24) git commit -m " changes from branch1"
+
+C25)  git push
+
+Finally, now your changes are in remote branch.
+
+Method 2) Cherry pick method
+
+In cherry pick method, your job will be more easier than patch method.
+
+you will just save the commit id of branch1. and checkout for branch2 by git fetch and git pull if required.
+
+
+C26) git cherry-pick <commitId> (example: d578d3d30cf655f3f658454bae591bf890ab008e)
+
+This command directly adds the commit id into your branch2.
+
+C27) git push
