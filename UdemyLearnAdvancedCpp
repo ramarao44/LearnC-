@@ -1,1 +1,3 @@
-
+Exceptions
+==========
+Exceptions are used to handle the runtime errors, else the promgram may get terminated.
